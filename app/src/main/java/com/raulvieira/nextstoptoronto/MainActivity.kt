@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.raulvieira.nextstoptoronto.navigation.MyAppNavHost
+import com.raulvieira.nextstoptoronto.navigation.Screen
 import com.raulvieira.nextstoptoronto.ui.theme.NextStopTorontoTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,27 +20,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             NextStopTorontoTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+                MyAppNavHost(startDestination = Screen.Home.route)
             }
         }
     }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     NextStopTorontoTheme {
-        Greeting("Android")
+        
     }
 }
