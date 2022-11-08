@@ -5,7 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.raulvieira.nextstoptoronto.screens.HomeScreen
+import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
 import com.raulvieira.nextstoptoronto.screens.second.SecondScreen
 
 @Composable

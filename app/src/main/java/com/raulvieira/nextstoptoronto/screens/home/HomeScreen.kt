@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto.screens
+package com.raulvieira.nextstoptoronto.screens.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
