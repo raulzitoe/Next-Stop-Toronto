@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -16,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
 import com.raulvieira.nextstoptoronto.screens.second.SecondScreen
 
@@ -26,8 +28,8 @@ fun MyAppNavHost(
     startDestination: String
 ) {
     val items = listOf(
-        listOf(Screen.Home, Icons.Filled.Home),
-        listOf(Screen.SecondScreen, Icons.Filled.Favorite)
+        listOf(Screen.Home, Icons.Filled.Home, stringResource(id = R.string.home)),
+        listOf(Screen.SecondScreen, Icons.Filled.Favorite, stringResource(id = R.string.favorites))
     )
 
     Scaffold(
@@ -38,7 +40,7 @@ fun MyAppNavHost(
                 items.forEach { item ->
                     NavigationBarItem(
                         icon = { Icon((item.component2() as ImageVector), contentDescription = null) },
-                        label = { Text("Risos") },
+                        label = { Text(item.component3() as String) },
                         selected = currentDestination?.hierarchy?.any { it.route == (item.component1() as Screen).route } == true,
                         onClick = {
                             navController.navigate((item.component1() as Screen).route) {
