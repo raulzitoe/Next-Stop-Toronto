@@ -10,4 +10,11 @@ interface RetrofitInterface {
     suspend fun requestRouteList(
         @Query("a") agency: String = "ttc"
     ): Response<RouteListModel>
+
+    @GET("publicJSONFeed?command=predictions")
+    suspend fun requestStopPrediction(
+        @Query("a") agency: String = "ttc",
+        @Query("stopId") stopId: String
+    ): Response<StopPredictionModel>
+
 }

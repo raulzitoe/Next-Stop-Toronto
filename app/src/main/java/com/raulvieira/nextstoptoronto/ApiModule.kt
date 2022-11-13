@@ -1,5 +1,7 @@
 package com.raulvieira.nextstoptoronto
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,11 +34,14 @@ object ApiModule {
 
     @Singleton
     @Provides
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
-        .addConverterFactory(GsonConverterFactory.create())
-        .baseUrl(BASE_URL)
-        .client(okHttpClient)
-        .build()
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        val gson = GsonBuilder().registerTypeAdapter(RoutePredictionsModel::class.java, RoutePredictionsDeserializer()).create()
+        return Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .build()
+    }
 
     @Singleton
     @Provides
