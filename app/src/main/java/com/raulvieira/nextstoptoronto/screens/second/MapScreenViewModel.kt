@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SecondScreenViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
+class MapScreenViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
     private val _stopState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(StopPredictionModel(arrayListOf()))
     val stopState: StateFlow<StopPredictionModel> = _stopState
 

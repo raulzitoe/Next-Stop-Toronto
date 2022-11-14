@@ -15,12 +15,16 @@ import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
+const val START_ZOOM = 18.0
+const val STARTING_LATITUDE = 43.656339
+const val STARTING_LONGITUDE = -79.460403
 
 @Composable
 fun MapView(
@@ -38,18 +42,25 @@ fun MapView(
         factory = { mapViewState },
         modifier = modifier
     ) { mapView ->
-        val mapController = mapView.controller
-        mapController.setZoom(18.0)
-        val startPoint = GeoPoint(43.656339, -79.460403);
-        mapController.setCenter(startPoint)
+
+        with(mapView.controller){
+            setZoom(START_ZOOM)
+            setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
+        }
+
         val compassOverlay =
             CompassOverlay(context, InternalCompassOrientationProvider(context), mapView)
         compassOverlay.enableCompass()
-        mapView.overlays.add(compassOverlay)
-        mapView.setMultiTouchControls(true)
-        mapView.overlays.add(RotationGestureOverlay(mapView))
         val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
-        mapView.overlays.add(locationOverlay)
+        val rotationOverlay = RotationGestureOverlay(mapView)
+        val overlaysList = listOf<Overlay>(compassOverlay, locationOverlay, rotationOverlay)
+
+        with(mapView){
+            overlays.addAll(overlaysList)
+            setMultiTouchControls(true)
+        }
+
+
         val json =
             context.resources.openRawResource(R.raw.stops).bufferedReader().use { it.readText() }
         val route = Gson().fromJson(json, RouteConfigModel::class.java)

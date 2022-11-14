@@ -2,8 +2,8 @@ package com.raulvieira.nextstoptoronto.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,7 +29,7 @@ fun MyAppNavHost(
 ) {
     val items = listOf(
         listOf(Screen.Home, Icons.Filled.Home, stringResource(id = R.string.home)),
-        listOf(Screen.SecondScreen, Icons.Filled.Favorite, stringResource(id = R.string.favorites))
+        listOf(Screen.MapScreen, Icons.Filled.Public, stringResource(id = R.string.map))
     )
 
     Scaffold(
@@ -62,7 +62,7 @@ fun MyAppNavHost(
             Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) { HomeScreen(onNavigate = {}) }
-            composable(Screen.SecondScreen.route) { SecondScreen(onNavigate = {}) }
+            composable(Screen.MapScreen.route) { SecondScreen(onNavigate = {}) }
         }
     }
 }
