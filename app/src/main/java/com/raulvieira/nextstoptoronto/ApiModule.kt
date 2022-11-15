@@ -35,7 +35,10 @@ object ApiModule {
     @Singleton
     @Provides
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        val gson = GsonBuilder().registerTypeAdapter(RoutePredictionsModel::class.java, RoutePredictionsDeserializer()).create()
+        val gson = GsonBuilder()
+            .registerTypeAdapter(RoutePredictionsModel::class.java, RoutePredictionsDeserializer())
+            .registerTypeAdapter(PredictionModel::class.java, PredictionModelDeserializer())
+            .create()
         return Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create(gson))
             .baseUrl(BASE_URL)
