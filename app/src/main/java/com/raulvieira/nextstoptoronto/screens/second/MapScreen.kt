@@ -28,7 +28,8 @@ fun SecondScreen(
             Text(text = "Second Screen", modifier = Modifier.clickable { onNavigate(Screen.Home) })
             MapView(
                 onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
-                stopState = viewModel.stopState )
+                stopState = viewModel.stopState,
+            routes = viewModel.getStops())
         }
 
     }

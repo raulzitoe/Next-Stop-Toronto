@@ -31,8 +31,8 @@ fun MapView(
     modifier: Modifier = Modifier,
     onLoad: ((map: MapView) -> Unit)? = null,
     onRequestStopInfo: (stopId: String) -> Unit,
-    stopState: StateFlow<StopPredictionModel>
-
+    stopState: StateFlow<StopPredictionModel>,
+    routes: RouteConfigModel
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
     val context = LocalContext.current
@@ -43,7 +43,7 @@ fun MapView(
         modifier = modifier
     ) { mapView ->
 
-        with(mapView.controller){
+        with(mapView.controller) {
             setZoom(START_ZOOM)
             setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
         }
@@ -55,47 +55,39 @@ fun MapView(
         val rotationOverlay = RotationGestureOverlay(mapView)
         val overlaysList = listOf<Overlay>(compassOverlay, locationOverlay, rotationOverlay)
 
-        with(mapView){
+        with(mapView) {
             overlays.addAll(overlaysList)
             setMultiTouchControls(true)
         }
 
-
-        val json =
-            context.resources.openRawResource(R.raw.stops).bufferedReader().use { it.readText() }
-        val route = Gson().fromJson(json, RouteConfigModel::class.java)
-
-        for (stop in route.route.stop) {
+        for (stop in routes.route.stop) {
             val marker = Marker(mapView)
 
             marker.position = GeoPoint(stop.lat.toDouble(), stop.lon.toDouble())
-            marker.setOnMarkerClickListener { marker1, mapView1 ->
+            marker.setOnMarkerClickListener { thisMarker, _ ->
                 onRequestStopInfo(stop.stopId)
                 coroutineScope.launch {
-                    stopState.collect{
-                        var textString: String = "Stop ID: " + stop.stopId
+                    stopState.collect {
+                        var textString: String = stop.title
                         if (it.predictions.isNotEmpty()) {
                             Log.e("direction", it.predictions.toString())
                             it.predictions.forEach { route ->
                                 if (!route.direction.isNullOrEmpty()) {
-                                    textString += "\n" + route.direction[0].title + " in:" + route.direction[0].prediction.first().minutes +" min"
+                                    val routeDirection  = route.direction[0].title.substringBefore(" ")
+                                    textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.direction[0].prediction.first().minutes + " min"
                                 }
                             }
                         }
-                        marker1.title = textString
-                        marker1.showInfoWindow()
+                        thisMarker.title = textString
+                        thisMarker.showInfoWindow()
                     }
                 }
-
-
                 true
             }
 
             marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             mapView.overlays.add(marker)
         }
-
-
         onLoad?.invoke(mapView)
     }
 }
