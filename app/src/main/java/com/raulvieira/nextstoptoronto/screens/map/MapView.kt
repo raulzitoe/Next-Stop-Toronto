@@ -1,16 +1,14 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.screens.map
 
 import android.util.Log
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.gson.Gson
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.raulvieira.nextstoptoronto.RouteConfigModel
+import com.raulvieira.nextstoptoronto.StopPredictionModel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView

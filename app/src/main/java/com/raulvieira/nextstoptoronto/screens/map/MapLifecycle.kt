@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.screens.map
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.raulvieira.nextstoptoronto.R
 import org.osmdroid.views.MapView
 
 @Composable
@@ -27,7 +28,6 @@ fun rememberMapViewWithLifecycle(): MapView {
             lifecycle.removeObserver(lifecycleObserver)
         }
     }
-
     return mapView
 }
 
@@ -38,6 +38,7 @@ fun rememberMapLifecycleObserver(mapView: MapView): LifecycleEventObserver =
             when (event) {
                 Lifecycle.Event.ON_RESUME -> mapView.onResume()
                 Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+
                 else -> {}
             }
         }
