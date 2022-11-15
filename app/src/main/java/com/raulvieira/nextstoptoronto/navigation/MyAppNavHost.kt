@@ -18,10 +18,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.screens.favorites.FavoritesScreen
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
 import com.raulvieira.nextstoptoronto.screens.map.SecondScreen
+import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +34,11 @@ fun MyAppNavHost(
     val items = listOf(
         listOf(Screen.Home, Icons.Filled.Home, stringResource(id = R.string.home)),
         listOf(Screen.MapScreen, Icons.Filled.Public, stringResource(id = R.string.map)),
-        listOf(Screen.FavoritesScreen, Icons.Filled.Favorite, stringResource(id = R.string.favorites))
+        listOf(
+            Screen.FavoritesScreen,
+            Icons.Filled.Favorite,
+            stringResource(id = R.string.favorites)
+        )
     )
 
     Scaffold(
@@ -42,7 +48,12 @@ fun MyAppNavHost(
                 val currentDestination = navBackStackEntry?.destination
                 items.forEach { item ->
                     NavigationBarItem(
-                        icon = { Icon((item.component2() as ImageVector), contentDescription = null) },
+                        icon = {
+                            Icon(
+                                (item.component2() as ImageVector),
+                                contentDescription = null
+                            )
+                        },
                         label = { Text(item.component3() as String) },
                         selected = currentDestination?.hierarchy?.any { it.route == (item.component1() as Screen).route } == true,
                         onClick = {
@@ -64,9 +75,19 @@ fun MyAppNavHost(
             startDestination = Screen.Home.route,
             Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) { HomeScreen(onNavigate = {}) }
-            composable(Screen.MapScreen.route) { SecondScreen(onNavigate = {}) }
+            composable(Screen.Home.route) {
+                HomeScreen(onNavigate = { busRouteTag ->
+                    navController.navigate(
+                        "${Screen.RouteInfoScreen.route}?routeTag=${busRouteTag}"
+                    )
+                })
+            }
+            composable(Screen.MapScreen.route) { SecondScreen() }
             composable(Screen.FavoritesScreen.route) { FavoritesScreen() }
+            composable(
+                route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
+                arguments = listOf(navArgument("routeTag") { defaultValue = " " })
+            ) { RouteInfoScreen(routeTag = it.arguments?.getString("routeTag") ?: " ") }
         }
     }
 }
