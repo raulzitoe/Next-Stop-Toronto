@@ -2,6 +2,7 @@ package com.raulvieira.nextstoptoronto.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.*
@@ -18,8 +19,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.screens.favorites.FavoritesScreen
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
-import com.raulvieira.nextstoptoronto.screens.second.SecondScreen
+import com.raulvieira.nextstoptoronto.screens.map.SecondScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +31,8 @@ fun MyAppNavHost(
 ) {
     val items = listOf(
         listOf(Screen.Home, Icons.Filled.Home, stringResource(id = R.string.home)),
-        listOf(Screen.MapScreen, Icons.Filled.Public, stringResource(id = R.string.map))
+        listOf(Screen.MapScreen, Icons.Filled.Public, stringResource(id = R.string.map)),
+        listOf(Screen.FavoritesScreen, Icons.Filled.Favorite, stringResource(id = R.string.favorites))
     )
 
     Scaffold(
@@ -63,6 +66,7 @@ fun MyAppNavHost(
         ) {
             composable(Screen.Home.route) { HomeScreen(onNavigate = {}) }
             composable(Screen.MapScreen.route) { SecondScreen(onNavigate = {}) }
+            composable(Screen.FavoritesScreen.route) { FavoritesScreen() }
         }
     }
 }
