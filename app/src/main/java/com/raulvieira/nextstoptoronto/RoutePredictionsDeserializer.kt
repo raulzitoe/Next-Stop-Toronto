@@ -1,10 +1,6 @@
 package com.raulvieira.nextstoptoronto
 
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
+import com.google.gson.*
 import java.lang.reflect.Type
 
 class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
@@ -17,6 +13,9 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
         if (json == null) {
             return RoutePredictionsModel("", "", "", "", arrayListOf())
         }
+        val gson = GsonBuilder().apply {
+            registerTypeAdapter(PredictionModel::class.java, PredictionModelDeserializer())
+        }.create()
         val jsonObject = json.asJsonObject
 
         val routeTag = if (jsonObject.has("routeTag")) jsonObject.get("routeTag").asString else ""
@@ -33,7 +32,7 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
             }
 
             elements.forEach { element ->
-                direction.add(Gson().fromJson(element, PredictionModel::class.java))
+                direction.add(gson.fromJson(element, PredictionModel::class.java))
             }
         }
         return RoutePredictionsModel(routeTag, stopTag, routeTitle, stopTitle, direction)
