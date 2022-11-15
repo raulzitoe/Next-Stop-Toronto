@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto.screens.second
+package com.raulvieira.nextstoptoronto.screens.map
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
