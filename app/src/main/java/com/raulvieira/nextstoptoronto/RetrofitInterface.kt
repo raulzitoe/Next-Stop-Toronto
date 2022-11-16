@@ -1,5 +1,8 @@
 package com.raulvieira.nextstoptoronto
 
+import com.raulvieira.nextstoptoronto.models.RouteConfigModel
+import com.raulvieira.nextstoptoronto.models.RouteListModel
+import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -16,5 +19,11 @@ interface RetrofitInterface {
         @Query("a") agency: String = "ttc",
         @Query("stopId") stopId: String
     ): Response<StopPredictionModel>
+
+    @GET("publicJSONFeed?command=routeConfig")
+    suspend fun requestRouteConfig(
+        @Query("a") agency: String = "ttc",
+        @Query("r") routeTag: String
+    ): Response<RouteConfigModel>
 
 }
