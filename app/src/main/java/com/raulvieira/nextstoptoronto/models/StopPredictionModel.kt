@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.models
 
 data class StopPredictionModel(
     val predictions: ArrayList<RoutePredictionsModel>

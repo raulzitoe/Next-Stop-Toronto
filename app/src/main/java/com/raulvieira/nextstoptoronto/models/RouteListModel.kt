@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.models
 
 import com.google.gson.annotations.SerializedName
 
