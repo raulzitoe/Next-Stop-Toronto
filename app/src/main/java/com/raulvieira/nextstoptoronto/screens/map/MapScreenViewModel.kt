@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.Repository
-import com.raulvieira.nextstoptoronto.RouteConfigModel
-import com.raulvieira.nextstoptoronto.StopPredictionModel
+import com.raulvieira.nextstoptoronto.models.RouteConfigModel
+import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -16,7 +16,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MapScreenViewModel @Inject constructor(private val repository: Repository, private val application: Application) : ViewModel() {
-    private val _stopState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(StopPredictionModel(arrayListOf()))
+    private val _stopState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
+        StopPredictionModel(arrayListOf())
+    )
     val stopState: StateFlow<StopPredictionModel> = _stopState
 
     fun getStopPrediction(stopId: String) {
@@ -28,7 +30,7 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository,
         }
     }
 
-    fun getStops(): RouteConfigModel{
+    fun getStops(): RouteConfigModel {
         val context = getApplication(application).applicationContext
         val json =
             context.resources.openRawResource(R.raw.stops).bufferedReader().use { it.readText() }
