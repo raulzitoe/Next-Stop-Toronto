@@ -1,6 +1,8 @@
 package com.raulvieira.nextstoptoronto
 
 import com.google.gson.*
+import com.raulvieira.nextstoptoronto.models.PredictionModel
+import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 import java.lang.reflect.Type
 
 class PredictionModelDeserializer : JsonDeserializer<PredictionModel> {

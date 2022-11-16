@@ -1,7 +1,8 @@
 package com.raulvieira.nextstoptoronto
 
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.raulvieira.nextstoptoronto.models.PredictionModel
+import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
