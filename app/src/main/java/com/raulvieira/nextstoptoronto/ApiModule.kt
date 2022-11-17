@@ -3,6 +3,7 @@ package com.raulvieira.nextstoptoronto
 import com.google.gson.GsonBuilder
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
+import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +17,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object ApiModule {
+
     private const val BASE_URL = "https://retro.umoiq.com/service/"
 
     @Singleton
@@ -39,6 +41,7 @@ object ApiModule {
         val gson = GsonBuilder()
             .registerTypeAdapter(RoutePredictionsModel::class.java, RoutePredictionsDeserializer())
             .registerTypeAdapter(PredictionModel::class.java, PredictionModelDeserializer())
+            .registerTypeAdapter(StopPredictionModel::class.java, StopPredictionDeserializer())
             .create()
         return Retrofit.Builder()
             .addConverterFactory(GsonConverterFactory.create(gson))
@@ -49,7 +52,8 @@ object ApiModule {
 
     @Singleton
     @Provides
-    fun provideApiService(retrofit: Retrofit):  RetrofitInterface = retrofit.create(RetrofitInterface::class.java)
+    fun provideApiService(retrofit: Retrofit): RetrofitInterface =
+        retrofit.create(RetrofitInterface::class.java)
 
     @Singleton
     @Provides
