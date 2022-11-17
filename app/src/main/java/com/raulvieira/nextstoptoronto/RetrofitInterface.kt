@@ -26,4 +26,11 @@ interface RetrofitInterface {
         @Query("r") routeTag: String
     ): Response<RouteConfigModel>
 
+    @GET("publicJSONFeed?command=predictions")
+    suspend fun requestStopPredictionByRoute(
+        @Query("a") agency: String = "ttc",
+        @Query("r") routeTag: String,
+        @Query("s") stopTag: String
+    ): Response<StopPredictionModel>
+
 }
