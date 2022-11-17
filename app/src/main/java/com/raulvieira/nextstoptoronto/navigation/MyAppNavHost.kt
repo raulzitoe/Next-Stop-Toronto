@@ -24,6 +24,7 @@ import com.raulvieira.nextstoptoronto.screens.favorites.FavoritesScreen
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
 import com.raulvieira.nextstoptoronto.screens.map.SecondScreen
 import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoScreen
+import com.raulvieira.nextstoptoronto.screens.stopinfo.StopInfoScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,27 @@ fun MyAppNavHost(
             composable(
                 route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
                 arguments = listOf(navArgument("routeTag") { defaultValue = " " })
-            ) { RouteInfoScreen(routeTag = it.arguments?.getString("routeTag") ?: " ") }
+            ) {
+                RouteInfoScreen(
+                    routeTag = it.arguments?.getString("routeTag") ?: " ",
+                    onNavigateUp = { navController.navigateUp() },
+                    onClickStop = { routeTag, stopTag ->
+                        navController.navigate(
+                            "${Screen.StopInfoScreen.route}?routeTag=${routeTag}&stopTag=${stopTag}"
+                        )
+                    })
+            }
+            composable(
+                route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopTag={stopTag}",
+                arguments = listOf(
+                    navArgument("routeTag") { defaultValue = " " },
+                    navArgument("stopTag") { defaultValue = " " })
+            ) {
+                StopInfoScreen(
+                    routeTag = it.arguments?.getString("routeTag") ?: " ",
+                    stopTag = it.arguments?.getString("stopTag") ?: " ",
+                    onNavigateUp = { navController.navigateUp() })
+            }
         }
     }
 }
