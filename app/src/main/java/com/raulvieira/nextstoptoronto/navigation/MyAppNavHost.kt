@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -87,7 +88,7 @@ fun MyAppNavHost(
             composable(Screen.FavoritesScreen.route) { FavoritesScreen() }
             composable(
                 route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
-                arguments = listOf(navArgument("routeTag") { defaultValue = " " })
+                arguments = listOf(navArgument("routeTag") { type = NavType.StringType })
             ) {
                 RouteInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
@@ -101,8 +102,8 @@ fun MyAppNavHost(
             composable(
                 route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopTag={stopTag}",
                 arguments = listOf(
-                    navArgument("routeTag") { defaultValue = " " },
-                    navArgument("stopTag") { defaultValue = " " })
+                    navArgument("routeTag") { type = NavType.StringType },
+                    navArgument("stopTag") { type = NavType.StringType })
             ) {
                 StopInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
