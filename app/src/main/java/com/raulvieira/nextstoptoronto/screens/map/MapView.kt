@@ -58,10 +58,10 @@ fun MapView(
             setMultiTouchControls(true)
         }
 
-        for (stop in routes.route.stop) {
+        for (stop in routes.route.stopsList) {
             val marker = Marker(mapView)
 
-            marker.position = GeoPoint(stop.lat.toDouble(), stop.lon.toDouble())
+            marker.position = GeoPoint(stop.latitude.toDouble(), stop.longitude.toDouble())
             marker.setOnMarkerClickListener { thisMarker, _ ->
                 onRequestStopInfo(stop.stopId)
                 coroutineScope.launch {
@@ -70,9 +70,9 @@ fun MapView(
                         if (it.predictions.isNotEmpty()) {
                             Log.e("direction", it.predictions.toString())
                             it.predictions.forEach { route ->
-                                if (!route.direction.isNullOrEmpty()) {
-                                    val routeDirection  = route.direction[0].title.substringBefore(" ")
-                                    textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.direction[0].prediction.first().minutes + " min"
+                                if (!route.directions.isNullOrEmpty()) {
+                                    val routeDirection  = route.directions[0].title.substringBefore(" ")
+                                    textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
                                 }
                             }
                         }

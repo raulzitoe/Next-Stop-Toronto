@@ -4,10 +4,11 @@ import com.google.gson.annotations.SerializedName
 
 data class RouteListModel(
     @SerializedName("route")
-    val routeList: List<RouteModel>
+    val routeList: List<RouteLineModel>
 )
 
-data class RouteModel(
-    val tag: String,
+data class RouteLineModel(
+    @SerializedName("tag")
+    val routeTag: String,
     val title: String
 )

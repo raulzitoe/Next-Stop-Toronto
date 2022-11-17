@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.raulvieira.nextstoptoronto.models.RouteModel
+import com.raulvieira.nextstoptoronto.models.RouteLineModel
 
 @Composable
 fun HomeScreen(
@@ -33,7 +33,7 @@ fun HomeScreen(
             columns = GridCells.Adaptive(minSize = 150.dp)
         ) {
             items(routes.routeList) { route ->
-                RouteCard(modifier = Modifier.height(60.dp), route = route, onClick = { onNavigate(route.tag) })
+                RouteCard(modifier = Modifier.height(60.dp), route = route, onClick = { onNavigate(route.routeTag) })
             }
         }
     }
@@ -41,7 +41,7 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteCard(modifier: Modifier, route: RouteModel, onClick: () -> Unit) {
+fun RouteCard(modifier: Modifier, route: RouteLineModel, onClick: () -> Unit) {
     Card(modifier = modifier.padding(5.dp), onClick = onClick) {
         Box(modifier = Modifier.fillMaxSize()) {
             Text(
@@ -60,5 +60,5 @@ fun RouteCard(modifier: Modifier, route: RouteModel, onClick: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun BusCardPreview() {
-    RouteCard(modifier = Modifier, RouteModel("41", "41 - Keele"), onClick = {})
+    RouteCard(modifier = Modifier, RouteLineModel("41", "41 - Keele"), onClick = {})
 }

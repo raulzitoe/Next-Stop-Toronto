@@ -3,7 +3,7 @@ package com.raulvieira.nextstoptoronto.screens.routeinfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.Repository
-import com.raulvieira.nextstoptoronto.models.Route2Model
+import com.raulvieira.nextstoptoronto.models.RouteModel
 import com.raulvieira.nextstoptoronto.models.RouteConfigModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ class RouteInfoViewModel @Inject constructor(private val repository: Repository)
 
     private val _uiState: MutableStateFlow<RouteConfigModel> = MutableStateFlow(
         RouteConfigModel(
-            Route2Model(
+            RouteModel(
                 "",
                 arrayListOf()
             )

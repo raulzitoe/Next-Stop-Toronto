@@ -58,7 +58,7 @@ fun RouteInfoScreen(
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
                     LazyColumn() {
-                        items(uiState.route.stop) { routeInfo ->
+                        items(uiState.route.stopsList) { routeInfo ->
                             RouteInfoCard(
                                 routeInfo = routeInfo,
                                 onClick = { stopTag -> onClickStop(routeTag, stopTag) })

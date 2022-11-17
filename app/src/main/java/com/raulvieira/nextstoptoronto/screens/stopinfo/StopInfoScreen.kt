@@ -21,8 +21,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
-import com.raulvieira.nextstoptoronto.models.StopsModel
-import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoCard
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,13 +69,13 @@ fun StopInfoScreen(
                     LazyColumn() {
                         items(
                             if (uiState.predictions.isNotEmpty()) {
-                                uiState.predictions.first().direction.first().prediction
+                                uiState.predictions.first().directions
                             } else {
                                 arrayListOf()
                             }
-                        ) { routeInfo ->
+                        ) { prediction ->
                             StopInfoCard(
-                                stopInfo = routeInfo,
+                                predictionInfo = prediction,
                                 onClick = { })
                         }
                     }
@@ -90,21 +88,22 @@ fun StopInfoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopInfoCard(stopInfo: SinglePredictionModel, onClick: (String) -> Unit) {
+fun StopInfoCard(predictionInfo: PredictionModel, onClick: (String) -> Unit) {
     Card(
         modifier = Modifier
-            .height(60.dp)
+            .wrapContentHeight()
             .padding(10.dp), onClick = { }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = stopInfo.minutes, textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(5.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column {
+                Text(predictionInfo.title)
+                predictionInfo.predictions.forEach {
+                    Row() {
+                        Text(text = "Vehicle: " + it.vehicle + " - ")
+                        Text(text = "In " + it.minutes + " minutes")
+                    }
+                }
+            }
         }
     }
 }
