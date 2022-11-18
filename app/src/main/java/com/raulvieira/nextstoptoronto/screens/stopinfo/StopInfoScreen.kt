@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
     routeTag: String,
-    stopTag: String,
+    stopId: String,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,7 +37,7 @@ fun StopInfoScreen(
     LaunchedEffect(key1 = Unit) {
         lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
             launch {
-                viewModel.getStopPrediction(routeTag = routeTag, stopTag = stopTag)
+                viewModel.getStopPrediction(stopId = stopId)
             }
         }
     }
@@ -66,19 +66,48 @@ fun StopInfoScreen(
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
+                    // This lazy columns should show the route selected
+
                     LazyColumn() {
                         items(
                             if (uiState.predictions.isNotEmpty()) {
-                                uiState.predictions.first().directions
+                                uiState.predictions.filter {
+                                    it.routeTag == routeTag
+                                }
                             } else {
                                 arrayListOf()
                             }
                         ) { prediction ->
-                            StopInfoCard(
-                                predictionInfo = prediction,
-                                onClick = { })
+                            prediction.directions.forEach { direction ->
+                                StopInfoCard(
+                                    predictionInfo = direction,
+                                    onClick = { })
+
+                            }
                         }
                     }
+                    if(uiState.predictions.size > 1){
+                        Text("Other lines at this stop: ")
+                        LazyColumn() {
+                            items(
+                                if (uiState.predictions.isNotEmpty()) {
+                                    uiState.predictions.filter {
+                                        it.routeTag != routeTag
+                                    }
+                                } else {
+                                    arrayListOf()
+                                }
+                            ) { prediction ->
+                                prediction.directions.forEach { direction ->
+                                    StopInfoCard(
+                                        predictionInfo = direction,
+                                        onClick = { })
+
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
         }

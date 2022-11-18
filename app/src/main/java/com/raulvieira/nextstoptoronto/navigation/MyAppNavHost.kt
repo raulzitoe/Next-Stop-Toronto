@@ -93,21 +93,21 @@ fun MyAppNavHost(
                 RouteInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
                     onNavigateUp = { navController.navigateUp() },
-                    onClickStop = { routeTag, stopTag ->
+                    onClickStop = { routeTag, stopId ->
                         navController.navigate(
-                            "${Screen.StopInfoScreen.route}?routeTag=${routeTag}&stopTag=${stopTag}"
+                            "${Screen.StopInfoScreen.route}?routeTag=${routeTag}&stopId=${stopId}"
                         )
                     })
             }
             composable(
-                route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopTag={stopTag}",
+                route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopId={stopId}",
                 arguments = listOf(
                     navArgument("routeTag") { type = NavType.StringType },
-                    navArgument("stopTag") { type = NavType.StringType })
+                    navArgument("stopId") { type = NavType.StringType })
             ) {
                 StopInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
-                    stopTag = it.arguments?.getString("stopTag") ?: " ",
+                    stopId = it.arguments?.getString("stopId") ?: " ",
                     onNavigateUp = { navController.navigateUp() })
             }
         }

@@ -8,9 +8,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -21,16 +23,19 @@ import com.raulvieira.nextstoptoronto.models.StopsModel
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteInfoScreen(
     viewModel: RouteInfoViewModel = hiltViewModel(),
     routeTag: String = "N/A",
     onNavigateUp: () -> Unit,
-    onClickStop: (routeTag:String, stopTag:String) -> Unit
+    onClickStop: (routeTag: String, stopId: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var searchText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
 
     LaunchedEffect(key1 = Unit) {
         lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
@@ -57,11 +62,32 @@ fun RouteInfoScreen(
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
+                    TextField(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        label = { Text("Search") }
+                    )
                     LazyColumn() {
-                        items(uiState.route.stopsList) { routeInfo ->
+                        items(
+                            items = uiState.route.stopsList
+                                .filter {
+                                   !it.stopId.isNullOrBlank()
+                                }
+                                .filter {
+                                val words = searchText.text.split("\\s+".toRegex()).map { word ->
+                                    word.replace("""^[,\.]|[,\.]$""".toRegex(), "")
+                                }
+                                var containsWord: Boolean = true
+                                words.forEach { word->
+                                   containsWord = containsWord && it.title.contains(word, ignoreCase = true)
+                                }
+                                containsWord
+
+                            }.sortedBy { it.title }, key = { it.stopId }) { routeInfo ->
                             RouteInfoCard(
                                 routeInfo = routeInfo,
-                                onClick = { stopTag -> onClickStop(routeTag, stopTag) })
+                                onClick = { stopId -> onClickStop(routeTag, stopId) })
                         }
                     }
                 }
@@ -72,11 +98,11 @@ fun RouteInfoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteInfoCard(routeInfo: StopsModel, onClick: (stopTag:String) -> Unit) {
+fun RouteInfoCard(routeInfo: StopsModel, onClick: (stopId: String) -> Unit) {
     Card(
         modifier = Modifier
             .height(60.dp)
-            .padding(10.dp), onClick = { onClick(routeInfo.tag) }
+            .padding(10.dp), onClick = { onClick(routeInfo.stopId) }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Text(

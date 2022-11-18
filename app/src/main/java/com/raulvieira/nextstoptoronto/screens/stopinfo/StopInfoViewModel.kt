@@ -20,15 +20,14 @@ class StopInfoViewModel @Inject constructor(private val repository: Repository) 
     val uiState: StateFlow<StopPredictionModel> = _uiState
 
 
-    fun getStopPrediction(routeTag: String, stopTag: String) {
-        if (routeTag.isNotBlank() && stopTag.isNotBlank()) {
+    fun getStopPrediction(stopId: String) {
+        if (stopId.isNotBlank()) {
             viewModelScope.launch {
-                repository.getStopPredictionByRoute(routeTag, stopTag).collect { data ->
+                repository.getStopPrediction(stopId).collect { data ->
                     if (data == null) return@collect
                     _uiState.update { data }
                 }
             }
         }
-
     }
 }
