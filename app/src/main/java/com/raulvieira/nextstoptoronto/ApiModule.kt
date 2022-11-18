@@ -1,12 +1,16 @@
 package com.raulvieira.nextstoptoronto
 
+import android.content.Context
+import androidx.room.Room
 import com.google.gson.GsonBuilder
+import com.raulvieira.nextstoptoronto.database.AppDatabase
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -58,4 +62,18 @@ object ApiModule {
     @Singleton
     @Provides
     fun providesRepository(apiService: RetrofitInterface) = Repository(apiService)
+
+    @Singleton // Tell Dagger-Hilt to create a singleton accessible everywhere in ApplicationCompenent (i.e. everywhere in the application)
+    @Provides
+    fun provideYourDatabase(
+        @ApplicationContext app: Context
+    ) = Room.databaseBuilder(
+        app,
+        AppDatabase::class.java,
+        "app_database"
+    ).build() // The reason we can construct a database for the repo
+
+    @Singleton
+    @Provides
+    fun provideAppDao(db: AppDatabase) = db.roomDao() // The reason we can implement a Dao for the database
 }
