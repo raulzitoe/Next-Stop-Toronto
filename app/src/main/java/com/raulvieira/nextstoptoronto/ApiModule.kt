@@ -61,9 +61,9 @@ object ApiModule {
 
     @Singleton
     @Provides
-    fun providesRepository(apiService: RetrofitInterface) = Repository(apiService)
+    fun providesRepository(apiService: RetrofitInterface, db: AppDatabase) = Repository(apiService, db.roomDao())
 
-    @Singleton // Tell Dagger-Hilt to create a singleton accessible everywhere in ApplicationCompenent (i.e. everywhere in the application)
+    @Singleton
     @Provides
     fun provideYourDatabase(
         @ApplicationContext app: Context
@@ -71,9 +71,9 @@ object ApiModule {
         app,
         AppDatabase::class.java,
         "app_database"
-    ).build() // The reason we can construct a database for the repo
+    ).build()
 
     @Singleton
     @Provides
-    fun provideAppDao(db: AppDatabase) = db.roomDao() // The reason we can implement a Dao for the database
+    fun provideAppDao(db: AppDatabase) = db.roomDao()
 }
