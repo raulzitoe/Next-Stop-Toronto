@@ -17,8 +17,8 @@ interface RoomDao {
     @Query("DELETE FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag ")
     suspend fun removeFromFavorites(stopTag: String, routeTag: String)
 
-    @Query("SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag")
-    fun getItemFromFavorites(stopTag: String, routeTag: String): Flow<FavoritesModel?>
+    @Query("SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle")
+    fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String): Flow<FavoritesModel?>
 
     @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag)")
     fun isOnCartDatabase(stopTag: String, routeTag: String) : Flow<Boolean>

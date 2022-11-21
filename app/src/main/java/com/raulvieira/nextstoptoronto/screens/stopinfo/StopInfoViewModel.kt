@@ -6,7 +6,6 @@ import com.raulvieira.nextstoptoronto.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,15 +40,15 @@ class StopInfoViewModel @Inject constructor(private val repository: Repository) 
         }
     }
 
-    suspend fun isRouteFavorited(stopTag: String, routeTag: String): StateFlow<Boolean> = flow {
-        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag).collect {
+    suspend fun isRouteFavorited(stopTag: String, routeTag: String, stopTitle: String): StateFlow<Boolean> = flow {
+        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle).collect {
             emit(it)
         }
     }.stateIn(viewModelScope)
 
 
-    suspend fun getItemFromFavorites(stopTag: String, routeTag: String) =
-        repository.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag)
+    suspend fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String) =
+        repository.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
             .stateIn(viewModelScope)
 
 

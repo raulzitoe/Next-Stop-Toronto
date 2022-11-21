@@ -6,16 +6,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -23,12 +18,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
-import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +75,8 @@ fun StopInfoScreen(
                                     launch {
                                         viewModel.isRouteFavorited(
                                             prediction.stopTag,
-                                            prediction.routeTag
+                                            prediction.routeTag,
+                                            prediction.stopTitle
                                         ).collect {
                                             isFavorited = it
                                         }
@@ -113,7 +104,8 @@ fun StopInfoScreen(
                                         launch {
                                             viewModel.isRouteFavorited(
                                                 prediction.stopTag,
-                                                prediction.routeTag
+                                                prediction.routeTag,
+                                                prediction.stopTitle
                                             ).collect {
                                                 isFavorited = it
                                             }
@@ -204,7 +196,7 @@ fun FavoritesButton(isChecked: Boolean, onChecked: (Boolean) -> Unit) {
         if (isChecked) {
             Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
         } else {
-            Icon(Icons.Outlined.Home, contentDescription = "Localized description")
+            Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Localized description")
         }
     }
 }

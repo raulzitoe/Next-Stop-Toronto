@@ -16,7 +16,8 @@ class Repository(private val apiService: RetrofitInterface, private val database
 
     fun getStopPredictionByRoute(routeTag: String, stopTag: String) = flow {
         emit(
-            apiService.requestStopPredictionByRoute(routeTag = routeTag, stopTag = stopTag).body())
+            apiService.requestStopPredictionByRoute(routeTag = routeTag, stopTag = stopTag).body()
+        )
     }
 
     suspend fun addToFavorites(item: FavoritesModel) {
@@ -27,8 +28,28 @@ class Repository(private val apiService: RetrofitInterface, private val database
         database.removeFromFavorites(stopTag = stopTag, routeTag = routeTag)
     }
 
-    fun getItemFromFavorites(stopTag: String, routeTag: String): Flow<FavoritesModel?> {
-        return database.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag)
+    fun getItemFromFavorites(
+        stopTag: String,
+        routeTag: String,
+        stopTitle: String
+    ): Flow<FavoritesModel?> {
+        return database.getItemFromFavorites(
+            stopTag = stopTag,
+            routeTag = routeTag,
+            stopTitle = stopTitle
+        )
+    }
+
+    fun isOnCartDatabase(
+        stopTag: String,
+        routeTag: String,
+        stopTitle: String
+    ): Flow<Boolean> {
+        return database.isOnCartDatabase(
+            stopTag = stopTag,
+            routeTag = routeTag,
+            stopTitle = stopTitle
+        )
     }
 
     suspend fun isOnCartDatabase(stopTag: String, routeTag: String) : Flow<Boolean> {
