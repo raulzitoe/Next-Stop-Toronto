@@ -3,11 +3,11 @@ package com.raulvieira.nextstoptoronto.screens.stopinfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.Repository
+import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,4 +30,27 @@ class StopInfoViewModel @Inject constructor(private val repository: Repository) 
             }
         }
     }
+
+    fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
+        viewModelScope.launch {
+            if (isButtonChecked) {
+                repository.addToFavorites(item)
+            } else {
+                repository.removeFromFavorites(item.stopTag, item.routeTag)
+            }
+        }
+    }
+
+    suspend fun isRouteFavorited(stopTag: String, routeTag: String): StateFlow<Boolean> = flow {
+        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag).collect {
+            emit(it)
+        }
+    }.stateIn(viewModelScope)
+
+
+    suspend fun getItemFromFavorites(stopTag: String, routeTag: String) =
+        repository.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag)
+            .stateIn(viewModelScope)
+
+
 }

@@ -14,10 +14,13 @@ interface RoomDao {
     @Insert
     suspend fun addToFavorites(favoriteItem: FavoritesModel)
 
-    @Delete
-    suspend fun removeFromFavorites(favoriteItem: FavoritesModel)
+    @Query("DELETE FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag ")
+    suspend fun removeFromFavorites(stopTag: String, routeTag: String)
 
     @Query("SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag")
-    fun getItemFromFavorites(stopTag: String, routeTag: String): Flow<FavoritesModel>
+    fun getItemFromFavorites(stopTag: String, routeTag: String): Flow<FavoritesModel?>
+
+    @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag)")
+    fun isOnCartDatabase(stopTag: String, routeTag: String) : Flow<Boolean>
 
 }

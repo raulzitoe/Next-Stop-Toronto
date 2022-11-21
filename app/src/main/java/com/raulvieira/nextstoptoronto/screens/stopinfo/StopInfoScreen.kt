@@ -5,11 +5,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -19,9 +20,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
+import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +40,7 @@ fun StopInfoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+
 
     LaunchedEffect(key1 = Unit) {
         lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
@@ -66,58 +74,105 @@ fun StopInfoScreen(
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
-                    // This lazy columns should show the route selected
-
-                    LazyColumn() {
-                        items(
-                            if (uiState.predictions.isNotEmpty()) {
-                                uiState.predictions.filter {
-                                    it.routeTag == routeTag
-                                }
-                            } else {
-                                arrayListOf()
-                            }
-                        ) { prediction ->
-                            prediction.directions.forEach { direction ->
-                                StopInfoCard(
-                                    predictionInfo = direction,
-                                    onClick = { })
-
-                            }
-                        }
-                    }
-                    if(uiState.predictions.size > 1){
-                        Text("Other lines at this stop: ")
-                        LazyColumn() {
-                            items(
-                                if (uiState.predictions.isNotEmpty()) {
-                                    uiState.predictions.filter {
-                                        it.routeTag != routeTag
+                    RoutesLazyList(
+                        routePredictions = uiState.predictions.filter {
+                            it.routeTag == routeTag
+                        },
+                        checkFavoritedItem = { prediction ->
+                            var isFavorited by remember { mutableStateOf(false) }
+                            LaunchedEffect(key1 = prediction.stopTag, key2 = prediction.routeTag) {
+                                lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
+                                    launch {
+                                        viewModel.isRouteFavorited(
+                                            prediction.stopTag,
+                                            prediction.routeTag
+                                        ).collect {
+                                            isFavorited = it
+                                        }
                                     }
-                                } else {
-                                    arrayListOf()
-                                }
-                            ) { prediction ->
-                                prediction.directions.forEach { direction ->
-                                    StopInfoCard(
-                                        predictionInfo = direction,
-                                        onClick = { })
-
                                 }
                             }
-                        }
+                            isFavorited
+                        },
+                        handleFavoriteCheck = { isChecked, favoriteModel ->
+                            viewModel.handleFavoriteItem(isChecked, favoriteModel)
+                        })
+                    if (uiState.predictions.size > 1) {
+                        Text("Other lines at this stop: ")
+                        RoutesLazyList(
+                            routePredictions = uiState.predictions.filter {
+                                it.routeTag != routeTag
+                            },
+                            checkFavoritedItem = { prediction ->
+                                var isFavorited by remember { mutableStateOf(false) }
+                                LaunchedEffect(
+                                    key1 = prediction.stopTag,
+                                    key2 = prediction.routeTag
+                                ) {
+                                    lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
+                                        launch {
+                                            viewModel.isRouteFavorited(
+                                                prediction.stopTag,
+                                                prediction.routeTag
+                                            ).collect {
+                                                isFavorited = it
+                                            }
+                                        }
+                                    }
+                                }
+                                isFavorited
+                            },
+                            handleFavoriteCheck = { isChecked, favoriteModel ->
+                                viewModel.handleFavoriteItem(isChecked, favoriteModel)
+                            })
                     }
-
                 }
             }
         }
     )
 }
 
+@Composable
+fun RoutesLazyList(
+    routePredictions: List<RoutePredictionsModel>,
+    checkFavoritedItem: @Composable (RoutePredictionsModel) -> Boolean,
+    handleFavoriteCheck: (Boolean, FavoritesModel) -> Unit
+) {
+    LazyColumn() {
+        items(routePredictions) { prediction ->
+
+            prediction.directions.forEach { direction ->
+                StopInfoCard(
+                    predictionInfo = direction,
+                    onClick = { },
+                    onClickFavorite = { isChecked ->
+                        handleFavoriteCheck(
+                            isChecked,
+                            FavoritesModel(
+                                id = 0,
+                                routeTag = prediction.routeTag,
+                                stopTag = prediction.stopTag,
+                                stopTitle = prediction.stopTitle
+                            )
+                        )
+                    },
+                    favoriteButtonChecked = checkFavoritedItem(prediction)
+                )
+
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopInfoCard(predictionInfo: PredictionModel, onClick: (String) -> Unit) {
+fun StopInfoCard(
+    predictionInfo: PredictionModel,
+    onClick: (String) -> Unit,
+    onClickFavorite: (Boolean) -> Unit,
+    favoriteButtonChecked: Boolean
+) {
     Card(
         modifier = Modifier
             .wrapContentHeight()
@@ -126,6 +181,10 @@ fun StopInfoCard(predictionInfo: PredictionModel, onClick: (String) -> Unit) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column {
                 Text(predictionInfo.title)
+                FavoritesButton(
+                    onChecked = { checkedValue -> onClickFavorite(checkedValue) },
+                    isChecked = favoriteButtonChecked
+                )
                 predictionInfo.predictions.forEach {
                     Row() {
                         Text(text = "Vehicle: " + it.vehicle + " - ")
@@ -133,6 +192,19 @@ fun StopInfoCard(predictionInfo: PredictionModel, onClick: (String) -> Unit) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun FavoritesButton(isChecked: Boolean, onChecked: (Boolean) -> Unit) {
+    IconToggleButton(checked = isChecked, onCheckedChange = {
+        onChecked(it)
+    }) {
+        if (isChecked) {
+            Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+        } else {
+            Icon(Icons.Outlined.Home, contentDescription = "Localized description")
         }
     }
 }
