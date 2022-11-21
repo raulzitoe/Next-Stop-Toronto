@@ -2,6 +2,7 @@ package com.raulvieira.nextstoptoronto
 
 import com.raulvieira.nextstoptoronto.database.RoomDao
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
+import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -52,8 +53,12 @@ class Repository(private val apiService: RetrofitInterface, private val database
         )
     }
 
-    suspend fun isOnCartDatabase(stopTag: String, routeTag: String) : Flow<Boolean> {
-        return database.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag)
+    fun getFavorites() = database.getFavorites()
+
+    fun requestPredictionsForMultiStops(stops: List<String>) : Flow<StopPredictionModel?> {
+        return flow {
+            emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
+        }
     }
 
 }

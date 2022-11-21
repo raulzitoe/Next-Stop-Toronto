@@ -20,7 +20,10 @@ interface RoomDao {
     @Query("SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle")
     fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String): Flow<FavoritesModel?>
 
-    @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag)")
-    fun isOnCartDatabase(stopTag: String, routeTag: String) : Flow<Boolean>
+    @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle)")
+    fun isOnCartDatabase(stopTag: String, routeTag: String, stopTitle: String) : Flow<Boolean>
+
+    @Query("SELECT * FROM favorites_table")
+    fun getFavorites() : Flow<List<FavoritesModel>>
 
 }
