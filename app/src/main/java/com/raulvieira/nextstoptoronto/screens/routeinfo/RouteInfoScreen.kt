@@ -18,12 +18,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.models.StopsModel
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
 @Composable
 fun RouteInfoScreen(
     viewModel: RouteInfoViewModel = hiltViewModel(),
@@ -31,7 +33,7 @@ fun RouteInfoScreen(
     onNavigateUp: () -> Unit,
     onClickStop: (routeTag: String, stopId: String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var searchText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
@@ -63,7 +65,9 @@ fun RouteInfoScreen(
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
                     TextField(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp),
                         value = searchText,
                         onValueChange = { searchText = it },
                         label = { Text("Search") }
