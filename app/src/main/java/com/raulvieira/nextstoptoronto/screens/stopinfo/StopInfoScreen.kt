@@ -71,20 +71,11 @@ fun StopInfoScreen(
                             it.routeTag == routeTag
                         },
                         checkFavoritedItem = { prediction ->
-                            var isFavorited by remember { mutableStateOf(false) }
-                            LaunchedEffect(key1 = prediction.stopTag, key2 = prediction.routeTag) {
-                                lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-                                    launch {
-                                        viewModel.isRouteFavorited(
-                                            prediction.stopTag,
-                                            prediction.routeTag,
-                                            prediction.stopTitle
-                                        ).collect {
-                                            isFavorited = it
-                                        }
-                                    }
-                                }
-                            }
+                            val isFavorited by viewModel.isRouteFavorited(
+                                prediction.stopTag,
+                                prediction.routeTag,
+                                prediction.stopTitle
+                            ).collectAsStateWithLifecycle(initialValue = false)
                             isFavorited
                         },
                         handleFavoriteCheck = { isChecked, favoriteModel ->
@@ -97,23 +88,11 @@ fun StopInfoScreen(
                                 it.routeTag != routeTag
                             },
                             checkFavoritedItem = { prediction ->
-                                var isFavorited by remember { mutableStateOf(false) }
-                                LaunchedEffect(
-                                    key1 = prediction.stopTag,
-                                    key2 = prediction.routeTag
-                                ) {
-                                    lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-                                        launch {
-                                            viewModel.isRouteFavorited(
-                                                prediction.stopTag,
-                                                prediction.routeTag,
-                                                prediction.stopTitle
-                                            ).collect {
-                                                isFavorited = it
-                                            }
-                                        }
-                                    }
-                                }
+                                val isFavorited by viewModel.isRouteFavorited(
+                                    prediction.stopTag,
+                                    prediction.routeTag,
+                                    prediction.stopTitle
+                                ).collectAsStateWithLifecycle(initialValue = false)
                                 isFavorited
                             },
                             handleFavoriteCheck = { isChecked, favoriteModel ->

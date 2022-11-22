@@ -40,16 +40,16 @@ class StopInfoViewModel @Inject constructor(private val repository: Repository) 
         }
     }
 
-    suspend fun isRouteFavorited(stopTag: String, routeTag: String, stopTitle: String): StateFlow<Boolean> = flow {
+    fun isRouteFavorited(stopTag: String, routeTag: String, stopTitle: String): SharedFlow<Boolean> = flow {
         repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle).collect {
             emit(it)
         }
-    }.stateIn(viewModelScope)
+    }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
 
 
-    suspend fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String) =
+    fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String) =
         repository.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
-            .stateIn(viewModelScope)
+            .stateIn(initialValue = null , scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000))
 
 
 }
