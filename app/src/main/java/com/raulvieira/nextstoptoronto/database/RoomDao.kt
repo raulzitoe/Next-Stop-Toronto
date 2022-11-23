@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 
 
 @Dao
@@ -22,6 +23,9 @@ interface RoomDao {
 
     @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle)")
     fun isOnCartDatabase(stopTag: String, routeTag: String, stopTitle: String) : Flow<Boolean>
+
+    @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle)")
+    fun isOnCartDatabase2(stopTag: String, routeTag: String, stopTitle: String) : Flow<Boolean>
 
     @Query("SELECT * FROM favorites_table")
     fun getFavorites() : Flow<List<FavoritesModel>>
