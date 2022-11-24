@@ -70,9 +70,12 @@ class Repository(private val apiService: RetrofitInterface, private val database
 
     fun getFavorites() = database.getFavorites()
 
-    fun requestPredictionsForMultiStops(stops: List<String>): Flow<StopPredictionModel?> {
+    fun requestPredictionsForMultiStops(scope: CoroutineScope, stops: List<String>): Flow<StopPredictionModel?> {
         return flow {
-            emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
+            while(scope.isActive){
+                emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
+                delay(10000)
+            }
         }
     }
 

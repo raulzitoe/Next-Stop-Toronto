@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.favorites
 
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.Repository
@@ -28,37 +29,56 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
         job.cancel()
     }
 
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
+        return repository.getFavorites().flatMapLatest { fav ->
+            val stopsDataFormatted: MutableList<String> = mutableListOf()
+            fav.forEach {
+                stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+            }
+            repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
+        }
+    }
+
     fun subscribeToFavorites() {
         viewModelScope.launch(job) {
-            repository.getFavorites().collect { favoritesList ->
-                val stopsDataFormatted: MutableList<String> = mutableListOf()
-
-                favoritesList.forEach {
-                    stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+            stopPredictionStream(viewModelScope).collect { data ->
+                data?.let { dataNotNull ->
+                    _uiState.update { dataNotNull }
                 }
-                favoriteRoutes.update { stopsDataFormatted }
             }
         }
 
-        viewModelScope.launch(job) {
-            favoriteRoutes.collect {
-                while (isActive) {
-                    var test: StopPredictionModel? = null
-                        repository.requestPredictionsForMultiStops(favoriteRoutes.value)
-                            .collect { predictions ->
-                                test = predictions
-                                if (predictions != null) {
-                                    _uiState.update { predictions }
-                                }
-                            }
-                    if(!test?.predictions.isNullOrEmpty()){
-                        delay(10000)
-                    }
-                }
-            }
 
-
-        }
+//        viewModelScope.launch(job) {
+//            repository.getFavorites().collect { favoritesList ->
+//                val stopsDataFormatted: MutableList<String> = mutableListOf()
+//
+//                favoritesList.forEach {
+//                    stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+//                }
+//                favoriteRoutes.update { stopsDataFormatted }
+//            }
+//        }
+//
+//        viewModelScope.launch(job) {
+//            favoriteRoutes.collect {
+//                while (isActive) {
+//                    var test: StopPredictionModel? = null
+//                    repository.requestPredictionsForMultiStops(favoriteRoutes.value)
+//                        .collect { predictions ->
+//                            test = predictions
+//                            if (predictions != null) {
+//                                _uiState.update { predictions }
+//                            }
+//                        }
+//                    if (!test?.predictions.isNullOrEmpty()) {
+//                        delay(10000)
+//                    }
+//                }
+//            }
+//        }
     }
 
     fun isRouteFavorited(
@@ -82,7 +102,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
             } else {
                 val myList =
                     _uiState.value.predictions.filter { value -> (value.routeTag != item.routeTag && value.stopTag != item.stopTag && value.stopTitle != item.stopTitle) }
-                _uiState.update { StopPredictionModel(ArrayList(myList)) }
+//                _uiState.update { StopPredictionModel(ArrayList(myList)) }
                 repository.removeFromFavorites(item.stopTag, item.routeTag)
             }
         }
