@@ -1,7 +1,8 @@
 package com.raulvieira.nextstoptoronto.screens.favorites
 
 
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.Repository
@@ -13,26 +14,36 @@ import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
-class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewModel() {
+class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewModel(),
+    DefaultLifecycleObserver {
 
     private val _uiState: MutableStateFlow<StopPredictionModel> =
         MutableStateFlow(StopPredictionModel(arrayListOf()))
     val uiState: StateFlow<StopPredictionModel> = _uiState
-    private val favoriteRoutes: MutableStateFlow<List<String>> = MutableStateFlow(arrayListOf())
     private var job = Job()
         get() {
             if (field.isCancelled) field = Job()
             return field
         }
 
-    fun cancelScope() {
-        job.cancel()
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        subscribeToFavorites()
     }
 
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        cancelScope()
+    }
+
+    private fun cancelScope() {
+        job.cancel()
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getFavorites().flatMapLatest { fav ->
+            if(fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(arrayListOf()))
             val stopsDataFormatted: MutableList<String> = mutableListOf()
             fav.forEach {
                 stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
@@ -41,7 +52,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
         }
     }
 
-    fun subscribeToFavorites() {
+    private fun subscribeToFavorites() {
         viewModelScope.launch(job) {
             stopPredictionStream(viewModelScope).collect { data ->
                 data?.let { dataNotNull ->
@@ -49,36 +60,6 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
                 }
             }
         }
-
-
-//        viewModelScope.launch(job) {
-//            repository.getFavorites().collect { favoritesList ->
-//                val stopsDataFormatted: MutableList<String> = mutableListOf()
-//
-//                favoritesList.forEach {
-//                    stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
-//                }
-//                favoriteRoutes.update { stopsDataFormatted }
-//            }
-//        }
-//
-//        viewModelScope.launch(job) {
-//            favoriteRoutes.collect {
-//                while (isActive) {
-//                    var test: StopPredictionModel? = null
-//                    repository.requestPredictionsForMultiStops(favoriteRoutes.value)
-//                        .collect { predictions ->
-//                            test = predictions
-//                            if (predictions != null) {
-//                                _uiState.update { predictions }
-//                            }
-//                        }
-//                    if (!test?.predictions.isNullOrEmpty()) {
-//                        delay(10000)
-//                    }
-//                }
-//            }
-//        }
     }
 
     fun isRouteFavorited(
@@ -100,9 +81,6 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
             if (isButtonChecked) {
                 repository.addToFavorites(item)
             } else {
-                val myList =
-                    _uiState.value.predictions.filter { value -> (value.routeTag != item.routeTag && value.stopTag != item.stopTag && value.stopTitle != item.stopTitle) }
-//                _uiState.update { StopPredictionModel(ArrayList(myList)) }
                 repository.removeFromFavorites(item.stopTag, item.routeTag)
             }
         }

@@ -32,16 +32,9 @@ fun FavoritesScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) {
-                viewModel.subscribeToFavorites()
-            } else if (event == Lifecycle.Event.ON_STOP) {
-                viewModel.cancelScope()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
+        lifecycleOwner.lifecycle.addObserver(viewModel)
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+            lifecycleOwner.lifecycle.removeObserver(viewModel)
         }
     }
 
