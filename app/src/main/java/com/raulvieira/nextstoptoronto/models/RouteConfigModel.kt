@@ -14,8 +14,9 @@ data class RouteModel(
 )
 
 data class StopsModel(
-    val stopId: String,
-    val tag: String, // Ex: 29
+    val stopId: String, // Id but not unique -> Stations
+    @SerializedName("tag")
+    val stopTag: String, // Ex: 15466 -> Unique stop ID
     @SerializedName("lat")
     val latitude: String,
     @SerializedName("lon")
