@@ -1,33 +1,46 @@
 package com.raulvieira.nextstoptoronto.screens.stopinfo
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.raulvieira.nextstoptoronto.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class StopInfoViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
+class StopInfoViewModel @Inject constructor(
+    private val repository: Repository,
+    state: SavedStateHandle
+) : ViewModel(),
+    DefaultLifecycleObserver {
 
     private val _uiState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
         StopPredictionModel(predictions = arrayListOf())
     )
     val uiState: StateFlow<StopPredictionModel> = _uiState
-
-
-    fun getStopPrediction(stopId: String) {
-        if (stopId.isNotBlank()) {
-            viewModelScope.launch {
-                repository.getStopPrediction(stopId).collect { data ->
-                    if (data == null) return@collect
-                    _uiState.update { data }
-                }
-            }
+    private var job = Job()
+        get() {
+            if (field.isCancelled) field = Job()
+            return field
         }
+    private val _stopId = state.get<String>("stopId")
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        subscribeToStopStream()
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        cancelScope()
+    }
+
+    private fun cancelScope() {
+        job.cancel()
     }
 
     fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
@@ -40,16 +53,37 @@ class StopInfoViewModel @Inject constructor(private val repository: Repository) 
         }
     }
 
-    fun isRouteFavorited(stopTag: String, routeTag: String, stopTitle: String): SharedFlow<Boolean> = flow {
-        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle).collect {
-            emit(it)
-        }
+    fun isRouteFavorited(
+        stopTag: String,
+        routeTag: String,
+        stopTitle: String
+    ): SharedFlow<Boolean> = flow {
+        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
+            .collect {
+                emit(it)
+            }
     }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
 
+    private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
+        return repository.getStopPrediction(_stopId ?: "").flatMapLatest { stopPrediction ->
+            if (stopPrediction == null || stopPrediction.predictions.isEmpty()) return@flatMapLatest flowOf(
+                StopPredictionModel(arrayListOf())
+            )
+            val stopsDataFormatted: MutableList<String> = mutableListOf()
+            stopPrediction.predictions.forEach {
+                stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+            }
+            repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
+        }
+    }
 
-    fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String) =
-        repository.getItemFromFavorites(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
-            .stateIn(initialValue = null , scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000))
-
-
+    private fun subscribeToStopStream() {
+        viewModelScope.launch(job) {
+            stopPredictionStream(viewModelScope).collect { data ->
+                data?.let { dataNotNull ->
+                    _uiState.update { dataNotNull }
+                }
+            }
+        }
+    }
 }
