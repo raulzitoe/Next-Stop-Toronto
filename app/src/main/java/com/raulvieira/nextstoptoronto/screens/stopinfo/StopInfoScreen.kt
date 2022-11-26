@@ -13,14 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -155,10 +153,22 @@ fun StopInfoCard(
                     onChecked = { checkedValue -> onClickFavorite(checkedValue) },
                     isChecked = favoriteButtonChecked
                 )
-                predictionInfo.predictions.forEach {
+                predictionInfo.predictions.forEach { stopPrediction ->
                     Row() {
-                        Text(text = "Vehicle: " + it.vehicle + " - ")
-                        Text(text = "In " + it.minutes + " minutes")
+                        val counter = remember { mutableStateOf(0) }
+                        LaunchedEffect(key1 = counter.value){
+                            delay(1000)
+                                counter.value++
+                        }
+                        LaunchedEffect(key1 = stopPrediction.seconds){
+                            counter.value = 0
+                        }
+                        val predictionSeconds = stopPrediction.seconds.toInt() - counter.value
+                        val minutes = predictionSeconds / 60
+                        val seconds = predictionSeconds % 60
+                        Text(text = "Vehicle: " + stopPrediction.vehicle + " - ")
+                        Text(text = "In %02d:%02d".format(minutes, seconds))
+
                     }
                 }
             }
