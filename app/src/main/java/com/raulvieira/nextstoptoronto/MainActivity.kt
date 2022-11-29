@@ -13,7 +13,6 @@ import org.osmdroid.config.Configuration
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val REQUEST_PERMISSIONS_REQUEST_CODE = 1;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,37 +24,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-
-        val permissionsToRequest = ArrayList<String>();
-        var i = 0;
-        while (i < grantResults.size) {
-            permissionsToRequest.add(permissions[i]);
-            i++;
-        }
-        if (permissionsToRequest.size > 0) {
-            this.requestPermissions(
-                permissionsToRequest.toTypedArray(),
-                REQUEST_PERMISSIONS_REQUEST_CODE
-            );
-        }
-        super.onRequestPermissionsResult(
-            requestCode,
-            permissionsToRequest.toTypedArray(),
-            grantResults
-        )
-    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     NextStopTorontoTheme {
-        
+
     }
 }
