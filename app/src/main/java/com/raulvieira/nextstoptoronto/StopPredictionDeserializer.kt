@@ -14,7 +14,7 @@ class StopPredictionDeserializer : JsonDeserializer<StopPredictionModel> {
         context: JsonDeserializationContext?
     ): StopPredictionModel {
         if (json == null) {
-            return StopPredictionModel(arrayListOf())
+            return StopPredictionModel(listOf())
         }
         val gson = GsonBuilder().apply {
             registerTypeAdapter(RoutePredictionsModel::class.java, RoutePredictionsDeserializer())

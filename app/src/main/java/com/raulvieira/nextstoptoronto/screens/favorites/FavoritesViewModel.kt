@@ -18,7 +18,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     DefaultLifecycleObserver {
 
     private val _uiState: MutableStateFlow<StopPredictionModel> =
-        MutableStateFlow(StopPredictionModel(arrayListOf()))
+        MutableStateFlow(StopPredictionModel(listOf()))
     val uiState: StateFlow<StopPredictionModel> = _uiState
     private var job = Job()
         get() {
@@ -43,7 +43,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getFavorites().flatMapLatest { fav ->
-            if(fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(arrayListOf()))
+            if(fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(listOf()))
             val stopsDataFormatted: MutableList<String> = mutableListOf()
             fav.forEach {
                 stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)

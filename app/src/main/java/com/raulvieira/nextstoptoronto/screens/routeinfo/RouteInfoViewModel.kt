@@ -19,7 +19,7 @@ class RouteInfoViewModel @Inject constructor(private val repository: Repository)
         RouteConfigModel(
             RouteModel(
                 "",
-                arrayListOf()
+                listOf()
             )
         )
     )

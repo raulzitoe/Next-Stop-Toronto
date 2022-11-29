@@ -9,7 +9,7 @@ data class RouteConfigModel(
 data class RouteModel(
     val title: String, // Ex: 29-Dufferin
     @SerializedName("stop")
-    val stopsList: ArrayList<StopsModel>
+    val stopsList: List<StopsModel>
     // Theres also direction field, not used for now
 )
 

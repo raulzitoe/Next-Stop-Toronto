@@ -13,7 +13,7 @@ class PredictionModelDeserializer : JsonDeserializer<PredictionModel> {
         context: JsonDeserializationContext?
     ): PredictionModel {
         if (json == null) {
-            return PredictionModel("", arrayListOf())
+            return PredictionModel("", listOf())
         }
         val jsonObject = json.asJsonObject
 

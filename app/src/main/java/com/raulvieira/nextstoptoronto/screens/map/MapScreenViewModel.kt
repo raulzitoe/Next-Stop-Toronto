@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MapScreenViewModel @Inject constructor(private val repository: Repository, private val application: Application) : ViewModel() {
     private val _stopState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
-        StopPredictionModel(arrayListOf())
+        StopPredictionModel(listOf())
     )
     val stopState: StateFlow<StopPredictionModel> = _stopState
 

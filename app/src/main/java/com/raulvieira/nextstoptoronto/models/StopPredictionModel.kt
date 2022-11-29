@@ -3,7 +3,7 @@ package com.raulvieira.nextstoptoronto.models
 import com.google.gson.annotations.SerializedName
 
 data class StopPredictionModel(
-    val predictions: ArrayList<RoutePredictionsModel>
+    val predictions: List<RoutePredictionsModel>
 )
 
 data class RoutePredictionsModel(
@@ -12,13 +12,13 @@ data class RoutePredictionsModel(
     val routeTitle: String, // 189-Stockyards
     val stopTitle: String, // Ex: Keele St At Glenlake Ave
     @SerializedName("direction")
-    val directions: ArrayList<PredictionModel>
+    val directions: List<PredictionModel>
 )
 
 data class PredictionModel(
     val title: String, // Ex: West - 189 Stockyards towards Scarlett Rd
     @SerializedName("prediction")
-    val predictions: ArrayList<SinglePredictionModel>
+    val predictions: List<SinglePredictionModel>
 )
 
 data class SinglePredictionModel(

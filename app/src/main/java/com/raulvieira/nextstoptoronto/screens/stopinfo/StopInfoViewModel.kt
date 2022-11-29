@@ -19,7 +19,7 @@ class StopInfoViewModel @Inject constructor(
     DefaultLifecycleObserver {
 
     private val _uiState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
-        StopPredictionModel(predictions = arrayListOf())
+        StopPredictionModel(predictions = listOf())
     )
     val uiState: StateFlow<StopPredictionModel> = _uiState
     private var job = Job()
@@ -67,7 +67,7 @@ class StopInfoViewModel @Inject constructor(
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getStopPrediction(_stopId ?: "").flatMapLatest { stopPrediction ->
             if (stopPrediction == null || stopPrediction.predictions.isEmpty()) return@flatMapLatest flowOf(
-                StopPredictionModel(arrayListOf())
+                StopPredictionModel(listOf())
             )
             val stopsDataFormatted: MutableList<String> = mutableListOf()
             stopPrediction.predictions.forEach {

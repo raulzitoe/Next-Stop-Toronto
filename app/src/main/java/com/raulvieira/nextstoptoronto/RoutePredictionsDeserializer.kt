@@ -13,7 +13,7 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
         context: JsonDeserializationContext?
     ): RoutePredictionsModel {
         if (json == null) {
-            return RoutePredictionsModel("", "", "", "", arrayListOf())
+            return RoutePredictionsModel("", "", "", "", listOf())
         }
         val gson = GsonBuilder().apply {
             registerTypeAdapter(PredictionModel::class.java, PredictionModelDeserializer())
