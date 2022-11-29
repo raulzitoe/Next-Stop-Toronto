@@ -1,8 +1,6 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 import android.Manifest
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -47,14 +45,11 @@ fun SecondScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-
-        Column {
-            MapView(
-                modifier = Modifier.fillMaxHeight(0.8f),
-                onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
-                stopState = viewModel.stopState,
-                routes = viewModel.getStops()
-            )
-        }
+        MapView(
+            modifier = Modifier.fillMaxSize(),
+            onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
+            stopState = viewModel.stopState,
+            routes = viewModel.getStops()
+        )
     }
 }
