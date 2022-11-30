@@ -7,6 +7,9 @@ import com.raulvieira.nextstoptoronto.database.AppDatabase
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
+import com.raulvieira.nextstoptoronto.utils.PredictionModelDeserializer
+import com.raulvieira.nextstoptoronto.utils.RoutePredictionsDeserializer
+import com.raulvieira.nextstoptoronto.utils.StopPredictionDeserializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
