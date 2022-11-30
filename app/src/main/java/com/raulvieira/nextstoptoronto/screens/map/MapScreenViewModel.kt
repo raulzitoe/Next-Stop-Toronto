@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.Repository
 import com.raulvieira.nextstoptoronto.models.RouteConfigModel
+import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,14 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository,
         StopPredictionModel(listOf())
     )
     val stopState: StateFlow<StopPredictionModel> = _stopState
+
+    private val _stopList: MutableStateFlow<List<StopModel>> = MutableStateFlow(arrayListOf())
+    val stopList: StateFlow<List<StopModel>> = _stopList
+
+    init {
+        getStopsFromDatabase()
+        fetchStopsListFromApi()
+    }
 
     fun getStopPrediction(stopId: String) {
         viewModelScope.launch {
@@ -35,5 +44,26 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository,
         val json =
             context.resources.openRawResource(R.raw.stops).bufferedReader().use { it.readText() }
         return Gson().fromJson(json, RouteConfigModel::class.java)
+    }
+
+    private fun getStopsFromDatabase() {
+        viewModelScope.launch {
+            repository.getStopsFromDatabase().collect { stopsData ->
+                _stopList.update { stopsData }
+            }
+        }
+    }
+
+    private fun fetchStopsListFromApi(){
+        //TODO if stops are not that old, don't fetch
+        viewModelScope.launch {
+            setStopsDatabase(repository.fetchStopsListFromApi())
+        }
+    }
+
+    private fun setStopsDatabase(stopsList: List<StopModel>) {
+        viewModelScope.launch {
+            repository.setStopsDatabase(stopsList)
+        }
     }
 }

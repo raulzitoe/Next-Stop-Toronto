@@ -21,7 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.raulvieira.nextstoptoronto.models.StopsModel
+import com.raulvieira.nextstoptoronto.models.StopModel
 import kotlinx.coroutines.launch
 
 
@@ -102,7 +102,7 @@ fun RouteInfoScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteInfoCard(routeInfo: StopsModel, onClick: (stopId: String) -> Unit) {
+fun RouteInfoCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
     Card(
         modifier = Modifier
             .height(60.dp)

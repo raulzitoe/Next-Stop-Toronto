@@ -6,7 +6,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.raulvieira.nextstoptoronto.models.RouteConfigModel
+import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -30,7 +30,7 @@ fun MapView(
     onLoad: ((map: MapView) -> Unit)? = null,
     onRequestStopInfo: (stopId: String) -> Unit,
     stopState: StateFlow<StopPredictionModel>,
-    routes: RouteConfigModel
+    stopsList: List<StopModel>
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
     val context = LocalContext.current
@@ -58,7 +58,7 @@ fun MapView(
             setMultiTouchControls(true)
         }
 
-        for (stop in routes.route.stopsList) {
+        for (stop in stopsList) {
             val marker = Marker(mapView)
 
             marker.position = GeoPoint(stop.latitude.toDouble(), stop.longitude.toDouble())

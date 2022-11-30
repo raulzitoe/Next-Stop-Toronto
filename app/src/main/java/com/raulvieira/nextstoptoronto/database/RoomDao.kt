@@ -1,12 +1,9 @@
 package com.raulvieira.nextstoptoronto.database
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
+import androidx.room.*
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
+import com.raulvieira.nextstoptoronto.models.StopModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
 
 
 @Dao
@@ -29,5 +26,11 @@ interface RoomDao {
 
     @Query("SELECT * FROM favorites_table")
     fun getFavorites() : Flow<List<FavoritesModel>>
+
+    @Upsert
+    suspend fun insertStopToDatabase(stop: StopModel)
+
+    @Query("SELECT * FROM stops_table")
+    fun getStopsFromDatabase() : Flow<List<StopModel>>
 
 }

@@ -11,11 +11,13 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalLifecycleComposeApi::class)
 @Composable
 fun SecondScreen(
     viewModel: MapScreenViewModel = hiltViewModel()
@@ -49,7 +51,7 @@ fun SecondScreen(
             modifier = Modifier.fillMaxSize(),
             onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
             stopState = viewModel.stopState,
-            routes = viewModel.getStops()
+            stopsList = viewModel.stopList.collectAsStateWithLifecycle().value
         )
     }
 }
