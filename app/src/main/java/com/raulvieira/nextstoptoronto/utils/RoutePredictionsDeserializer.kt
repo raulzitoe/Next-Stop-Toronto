@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.utils
 
 import com.google.gson.*
 import com.raulvieira.nextstoptoronto.models.PredictionModel

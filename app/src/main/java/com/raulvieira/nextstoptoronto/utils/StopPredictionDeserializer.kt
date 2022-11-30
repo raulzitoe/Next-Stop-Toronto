@@ -1,7 +1,6 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.utils
 
 import com.google.gson.*
-import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import java.lang.reflect.Type
