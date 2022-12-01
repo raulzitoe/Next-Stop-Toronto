@@ -1,11 +1,13 @@
 package com.raulvieira.nextstoptoronto
 
 import com.raulvieira.nextstoptoronto.database.RoomDao
+import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.util.*
 
 class Repository(private val apiService: RetrofitInterface, private val database: RoomDao) {
 
@@ -105,6 +107,14 @@ class Repository(private val apiService: RetrofitInterface, private val database
         stopsList.forEach {
             database.insertStopToDatabase(it)
         }
+    }
+
+    suspend fun getLastUpdatedDate(): Date? {
+        return database.getLastUpdatedDate()?.lastUpdated
+    }
+
+    suspend fun setLastUpdatedDate(date: Date) {
+        database.setLastUpdatedDate(DateDatabaseModel(lastUpdated = date))
     }
 
 }

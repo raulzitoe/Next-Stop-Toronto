@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -13,6 +14,7 @@ import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,15 +57,38 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository,
     }
 
     private fun fetchStopsListFromApi(){
-        //TODO if stops are not that old, don't fetch
         viewModelScope.launch {
-            setStopsDatabase(repository.fetchStopsListFromApi())
+            val lastUpdated = repository.getLastUpdatedDate()
+            val currentDate = Calendar.getInstance().time
+            if (lastUpdated != null) {
+                val dateToCheck = Calendar.getInstance()
+                dateToCheck.time = lastUpdated
+                dateToCheck.add(Calendar.DATE, 60)
+                // Fetch data if 60 days since last update
+                if(dateToCheck.time < currentDate) {
+                    Log.i("fetch_stops", "Fetching stops because local data is old")
+                    setStopsDatabase(repository.fetchStopsListFromApi())
+                    repository.setLastUpdatedDate(Calendar.getInstance().time)
+                }
+                else {
+                    Log.i("fetch_stops", "Stop data is not old, not fetching")
+                }
+            }
+            else{
+                Log.i("fetch_stops", "Fetching stops because local data is null")
+                setStopsDatabase(repository.fetchStopsListFromApi())
+                repository.setLastUpdatedDate(Calendar.getInstance().time)
+            }
+
+
         }
     }
 
     private fun setStopsDatabase(stopsList: List<StopModel>) {
         viewModelScope.launch {
             repository.setStopsDatabase(stopsList)
+            val currentTime: Date = Calendar.getInstance().time
+            repository.setLastUpdatedDate(currentTime)
         }
     }
 }

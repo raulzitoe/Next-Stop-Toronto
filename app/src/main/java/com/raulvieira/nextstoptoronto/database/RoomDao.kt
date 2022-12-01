@@ -1,9 +1,11 @@
 package com.raulvieira.nextstoptoronto.database
 
 import androidx.room.*
+import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import kotlinx.coroutines.flow.Flow
+import java.util.*
 
 
 @Dao
@@ -32,5 +34,11 @@ interface RoomDao {
 
     @Query("SELECT * FROM stops_table")
     fun getStopsFromDatabase() : Flow<List<StopModel>>
+
+    @Upsert
+    suspend fun setLastUpdatedDate(dateModel: DateDatabaseModel)
+
+    @Query("SELECT * FROM last_updated_table")
+    suspend fun getLastUpdatedDate(): DateDatabaseModel?
 
 }
