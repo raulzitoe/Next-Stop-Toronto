@@ -34,8 +34,13 @@ fun HomeScreen(
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 150.dp)
         ) {
-            items(routes.routeList) { route ->
-                RouteCard(modifier = Modifier.height(60.dp), route = route, onClick = { onNavigate(route.routeTag) })
+            items(items = routes.routeList,
+                key = { it.routeTag }
+            ) { route ->
+                RouteCard(
+                    modifier = Modifier.height(60.dp),
+                    route = route,
+                    onClick = { onNavigate(route.routeTag) })
             }
         }
     }
