@@ -8,7 +8,7 @@ import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.utils.Converters
 
-@Database(entities = [FavoritesModel::class, StopModel::class, DateDatabaseModel::class], version = 1)
+@Database(entities = [FavoritesModel::class, StopModel::class, DateDatabaseModel::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun roomDao(): RoomDao

@@ -64,7 +64,8 @@ object ApiModule {
 
     @Singleton
     @Provides
-    fun providesRepository(apiService: RetrofitInterface, db: AppDatabase) = Repository(apiService, db.roomDao())
+    fun providesRepository(apiService: RetrofitInterface, db: AppDatabase) =
+        Repository(apiService, db.roomDao())
 
     @Singleton
     @Provides
@@ -74,7 +75,7 @@ object ApiModule {
         app,
         AppDatabase::class.java,
         "app_database"
-    ).build()
+    ).fallbackToDestructiveMigration().build()
 
     @Singleton
     @Provides
