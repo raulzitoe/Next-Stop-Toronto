@@ -1,9 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 import android.Manifest
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
@@ -43,9 +41,8 @@ fun SecondScreen(
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
         MapView(
             modifier = Modifier.fillMaxSize(),
