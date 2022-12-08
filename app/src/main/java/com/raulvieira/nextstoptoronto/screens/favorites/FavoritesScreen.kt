@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
@@ -61,7 +59,7 @@ fun FavoritesScreen(
             ) {
                 LazyColumn() {
                     items(uiState.value.predictions) { favoriteItem ->
-                        favoriteItem.directions.forEach { direction ->
+                        favoriteItem.directions?.forEach { direction ->
                             StopInfoCard(
                                 predictionInfo = direction,
                                 onClick = { },

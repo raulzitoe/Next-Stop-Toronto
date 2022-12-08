@@ -12,7 +12,7 @@ data class RoutePredictionsModel(
     val routeTitle: String, // 189-Stockyards
     val stopTitle: String, // Ex: Keele St At Glenlake Ave
     @SerializedName("direction")
-    val directions: List<PredictionModel>
+    val directions: List<PredictionModel>?
 )
 
 data class PredictionModel(

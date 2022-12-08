@@ -110,7 +110,7 @@ fun RoutesLazyList(
     LazyColumn() {
         items(routePredictions) { prediction ->
 
-            prediction.directions.forEach { direction ->
+            prediction.directions?.forEach { direction ->
                 StopInfoCard(
                     predictionInfo = direction,
                     onClick = { },
