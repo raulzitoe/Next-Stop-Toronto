@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 
+import android.graphics.Canvas
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -17,10 +18,10 @@ import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
+import org.osmdroid.views.Projection
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.compass.CompassOverlay
-import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
@@ -60,9 +61,12 @@ fun MapView(
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         }
 
-        val compassOverlay =
-            CompassOverlay(context, InternalCompassOrientationProvider(context), mapView)
-        compassOverlay.enableCompass()
+        val mapNorthCompassOverlay = object: CompassOverlay(context, mapView) {
+            override fun draw(c: Canvas?, pProjection: Projection?) {
+                drawCompass(c, -mapView.mapOrientation, pProjection?.screenRect)
+            }
+        }
+
         val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
 
         // Override to improve map rotation smoothness - decreased deltaTime
@@ -124,7 +128,7 @@ fun MapView(
         }
 
         val overlays =
-            listOf(rotationOverlay, stopMarkersOverlay, locationOverlay, compassOverlay)
+            listOf(rotationOverlay, stopMarkersOverlay, locationOverlay, mapNorthCompassOverlay)
         mapView.overlays.addAll(overlays)
 
         // Events Overlays needs to be first to listen to events
