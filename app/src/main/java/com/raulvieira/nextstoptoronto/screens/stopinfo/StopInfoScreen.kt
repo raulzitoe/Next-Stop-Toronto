@@ -1,17 +1,27 @@
 package com.raulvieira.nextstoptoronto.screens.stopinfo
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -113,6 +123,7 @@ fun RoutesLazyList(
             prediction.directions?.forEach { direction ->
                 StopInfoCard(
                     predictionInfo = direction,
+                    routeTag = prediction.routeTag,
                     onClick = { },
                     onClickFavorite = { isChecked ->
                         handleFavoriteCheck(
@@ -137,6 +148,8 @@ fun RoutesLazyList(
 @Composable
 fun StopInfoCard(
     predictionInfo: PredictionModel,
+    routeTag: String,
+    stopTitle: String = "",
     onClick: (String) -> Unit,
     onClickFavorite: (Boolean) -> Unit,
     favoriteButtonChecked: Boolean
@@ -146,21 +159,46 @@ fun StopInfoCard(
             .wrapContentHeight()
             .padding(10.dp), onClick = { }
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(10.dp)) {
             Column {
-                Text(predictionInfo.title)
-                FavoritesButton(
-                    onChecked = { checkedValue -> onClickFavorite(checkedValue) },
-                    isChecked = favoriteButtonChecked
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .defaultMinSize(minWidth = 80.dp)
+                            .padding(top = 10.dp, bottom = 10.dp, end = 10.dp),
+                        color = Color.Red,
+                        shape = RoundedCornerShape(15.dp)
+                    ) {
+                        Text(
+                            text = routeTag,
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 5.dp),
+                            fontWeight = FontWeight.ExtraBold,
+                            textAlign = TextAlign.Center,
+                            fontSize = 24.sp
+                        )
+                    }
+                    Text(predictionInfo.title)
+
+                }
+                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Stop: $stopTitle")
+                    FavoritesButton(
+                        onChecked = { checkedValue -> onClickFavorite(checkedValue) },
+                        isChecked = favoriteButtonChecked
+                    )
+                }
+
                 predictionInfo.predictions.forEach { stopPrediction ->
                     Row() {
                         val counter = remember { mutableStateOf(0) }
-                        LaunchedEffect(key1 = counter.value){
+                        LaunchedEffect(key1 = counter.value) {
                             delay(1000)
-                                counter.value++
+                            counter.value++
                         }
-                        LaunchedEffect(key1 = stopPrediction.seconds){
+                        LaunchedEffect(key1 = stopPrediction.seconds) {
                             counter.value = 0
                         }
                         val predictionSeconds = stopPrediction.seconds.toInt() - counter.value

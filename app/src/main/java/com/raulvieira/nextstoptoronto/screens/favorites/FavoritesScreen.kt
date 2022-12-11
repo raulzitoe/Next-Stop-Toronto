@@ -62,6 +62,8 @@ fun FavoritesScreen(
                         favoriteItem.directions?.forEach { direction ->
                             StopInfoCard(
                                 predictionInfo = direction,
+                                routeTag = favoriteItem.routeTag,
+                                stopTitle = favoriteItem.stopTitle,
                                 onClick = { },
                                 onClickFavorite = { isChecked ->
                                     viewModel.handleFavoriteItem(
