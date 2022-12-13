@@ -1,8 +1,10 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 
+import android.content.Context
 import android.graphics.Canvas
 import android.util.Log
+import android.view.MotionEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -11,10 +13,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
 import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
@@ -61,7 +65,7 @@ fun MapView(
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         }
 
-        val mapNorthCompassOverlay = object: CompassOverlay(context, mapView) {
+        val mapNorthCompassOverlay = object : CompassOverlay(context, mapView) {
             override fun draw(c: Canvas?, pProjection: Projection?) {
                 drawCompass(c, -mapView.mapOrientation, pProjection?.screenRect)
             }
@@ -93,46 +97,106 @@ fun MapView(
                 return false
             }
         })
+        Log.e("MAP", mapView.boundingBox.toString())
 
         // Markers for each stop
-        val stopMarkersOverlay = RadiusMarkerClusterer(context)
-        for (stop in stopsList) {
-            val marker = Marker(mapView)
+        val stopMarkersOverlay = filteredMarkersOverlay(
+            context,
+            stopsList,
+            mapView,
+            onRequestStopInfo = {stopId -> onRequestStopInfo(stopId) },
+            stopState,
+            coroutineScope
+        )
 
-            marker.position = GeoPoint(stop.latitude.toDouble(), stop.longitude.toDouble())
-            marker.icon = context.getDrawable(R.drawable.ic_person_pin)
-            marker.setOnMarkerClickListener { thisMarker, _ ->
-                onRequestStopInfo(stop.stopId)
-                coroutineScope.launch {
-                    stopState.collect {
-                        var textString: String = stop.title
-                        if (it.predictions.isNotEmpty()) {
-                            Log.e("direction", it.predictions.toString())
-                            it.predictions.forEach { route ->
-                                if (!route.directions.isNullOrEmpty()) {
-                                    val routeDirection =
-                                        route.directions[0].title.substringBefore(" ")
-                                    textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
-                                }
-                            }
-                        }
-                        thisMarker.title = textString
-                        thisMarker.showInfoWindow()
-                    }
-                }
-                true
-            }
-
-            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            stopMarkersOverlay.add(marker)
-        }
 
         val overlays =
             listOf(rotationOverlay, stopMarkersOverlay, locationOverlay, mapNorthCompassOverlay)
         mapView.overlays.addAll(overlays)
 
+        mapView.setOnTouchListener { view, motionEvent ->
+            view.performClick()
+            if (motionEvent.actionMasked == MotionEvent.ACTION_UP) {
+                Log.e("TEST", (view as MapView).overlays.toString())
+                val stops = filteredMarkersOverlay(
+                    context,
+                    stopsList,
+                    mapView,
+                    onRequestStopInfo = {stopId -> onRequestStopInfo(stopId) },
+                    stopState,
+                    coroutineScope
+                )
+                (view as MapView).overlays[2] = stops
+                view.invalidate()
+                Log.e("MAP", motionEvent.toString())
+            }
+            false
+        }
+
         // Events Overlays needs to be first to listen to events
         mapView.overlays.add(0, mapEventsOverlay)
         onLoad?.invoke(mapView)
     }
+}
+
+fun isStopWithinBoundBox(
+    stopLatitude: Double,
+    stopLongitude: Double,
+    boundingBox: BoundingBox
+): Boolean {
+    if (stopLatitude > boundingBox.latSouth && stopLatitude < boundingBox.latNorth
+        && stopLongitude < boundingBox.lonEast && stopLongitude > boundingBox.lonWest
+    ) {
+        return true
+    }
+    return false
+}
+
+fun filteredMarkersOverlay(
+    context: Context,
+    stopsList: List<StopModel>,
+    mapView: MapView,
+    onRequestStopInfo: (stopId: String) -> Unit,
+    stopState: StateFlow<StopPredictionModel>,
+    coroutineScope: CoroutineScope
+): RadiusMarkerClusterer {
+    val stopMarkersOverlay = RadiusMarkerClusterer(context)
+    for (stop in stopsList) {
+        if (!isStopWithinBoundBox(
+                stop.latitude.toDouble(),
+                stop.longitude.toDouble(),
+                mapView.boundingBox
+            )
+        ) continue
+
+        val marker = Marker(mapView)
+
+        marker.position = GeoPoint(stop.latitude.toDouble(), stop.longitude.toDouble())
+        marker.icon = context.getDrawable(R.drawable.ic_person_pin)
+        marker.setOnMarkerClickListener { thisMarker, _ ->
+            onRequestStopInfo(stop.stopId)
+            coroutineScope.launch {
+                stopState.collect {
+                    var textString: String = stop.title
+                    if (it.predictions.isNotEmpty()) {
+                        Log.e("direction", it.predictions.toString())
+                        it.predictions.forEach { route ->
+                            if (!route.directions.isNullOrEmpty()) {
+                                val routeDirection =
+                                    route.directions[0].title.substringBefore(" ")
+                                textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
+                            }
+                        }
+                    }
+                    thisMarker.title = textString
+                    thisMarker.showInfoWindow()
+                }
+            }
+            true
+        }
+
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        stopMarkersOverlay.add(marker)
+    }
+    return stopMarkersOverlay
 }
