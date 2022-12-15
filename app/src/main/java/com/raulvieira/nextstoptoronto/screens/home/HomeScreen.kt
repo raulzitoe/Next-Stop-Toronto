@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -16,9 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
 
-@OptIn(ExperimentalLifecycleComposeApi::class)
+@OptIn(ExperimentalLifecycleComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -27,23 +29,36 @@ fun HomeScreen(
 ) {
     val routes by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp)
-        ) {
-            items(items = routes.routeList,
-                key = { it.routeTag }
-            ) { route ->
-                RouteCard(
-                    modifier = Modifier.height(60.dp),
-                    route = route,
-                    onClick = { onNavigate(route.routeTag) })
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(stringResource(id = R.string.app_name))
+                }
+            )
+        },
+        content = { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 150.dp)
+                ) {
+                    items(items = routes.routeList,
+                        key = { it.routeTag }
+                    ) { route ->
+                        RouteCard(
+                            modifier = Modifier.height(60.dp),
+                            route = route,
+                            onClick = { onNavigate(route.routeTag) })
+                    }
+                }
             }
-        }
-    }
+        })
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
