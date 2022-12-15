@@ -41,13 +41,6 @@ fun FavoritesScreen(
             TopAppBar(
                 title = {
                     Text(stringResource(id = R.string.favorites))
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { onNavigateUp() }
-                    ) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Localized description")
-                    }
                 }
             )
         },
