@@ -1,16 +1,20 @@
 package com.raulvieira.nextstoptoronto.screens.routeinfo
 
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +42,14 @@ fun RouteInfoScreen(
     var searchText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
+    var searchVisible by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible){
+            focusRequester.requestFocus()
+        }
+    }
 
     LaunchedEffect(key1 = Unit) {
         lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
@@ -58,20 +70,27 @@ fun RouteInfoScreen(
                     ) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Localized description")
                     }
+                },
+                actions = {
+                    IconButton(onClick = { searchVisible = !searchVisible }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Localized description")
+                    }
                 }
             )
         },
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
-                    TextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp),
-                        value = searchText,
-                        onValueChange = { searchText = it },
-                        label = { Text("Search") }
-                    )
+                    AnimatedVisibility(visible = searchVisible) {
+                        TextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp).focusRequester(focusRequester),
+                            value = searchText,
+                            onValueChange = { searchText = it },
+                            label = { Text("Search") }
+                        )
+                    }
                     LazyColumn() {
                         items(
                             items = uiState.route.stopsList
