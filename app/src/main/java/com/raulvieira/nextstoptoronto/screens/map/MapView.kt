@@ -3,6 +3,7 @@ package com.raulvieira.nextstoptoronto.screens.map
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.util.Log
 import android.view.MotionEvent
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.GeometryMath
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.Projection
@@ -30,6 +32,7 @@ import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import kotlin.math.ceil
 
 
 const val START_ZOOM = 18.0
@@ -69,6 +72,31 @@ fun MapView(
             override fun draw(c: Canvas?, pProjection: Projection?) {
                 drawCompass(c, -mapView.mapOrientation, pProjection?.screenRect)
             }
+
+            override fun onSingleTapConfirmed(e: MotionEvent?, mapView: MapView?): Boolean {
+                if (e?.actionMasked == MotionEvent.ACTION_DOWN) {
+                    if (mapView == null) return false
+                    val mapViewPosition = IntArray(2)
+                    mapView.getLocationOnScreen(mapViewPosition)
+                    val frameLeft =
+                        (ceil((35.0f * mScale - mCompassRoseBitmap.width / 2) + mapViewPosition[0]).toInt())
+                    val frameTop =
+                        (ceil((35.0f * mScale - mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
+                    val frameRight =
+                        (ceil((35.0f * mScale + mCompassRoseBitmap.width / 2 + mapViewPosition[0])).toInt())
+                    val frameBottom =
+                        (ceil((35.0f * mScale + mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
+
+                    if (e.rawX > frameLeft && e.rawX < frameRight && e.rawY > frameTop && e.rawY < frameBottom) {
+                        mapView.controller.animateTo(
+                            mapView.mapCenter, mapView.zoomLevelDouble,
+                            1000L, 0f
+                        )
+                        return true
+                    }
+                }
+                return false
+            }
         }
 
         val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
@@ -97,14 +125,13 @@ fun MapView(
                 return false
             }
         })
-        Log.e("MAP", mapView.boundingBox.toString())
 
         // Markers for each stop
         val stopMarkersOverlay = filteredMarkersOverlay(
             context,
             stopsList,
             mapView,
-            onRequestStopInfo = {stopId -> onRequestStopInfo(stopId) },
+            onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
             stopState,
             coroutineScope
         )
@@ -117,18 +144,16 @@ fun MapView(
         mapView.setOnTouchListener { view, motionEvent ->
             view.performClick()
             if (motionEvent.actionMasked == MotionEvent.ACTION_UP) {
-                Log.e("TEST", (view as MapView).overlays.toString())
                 val stops = filteredMarkersOverlay(
                     context,
                     stopsList,
                     mapView,
-                    onRequestStopInfo = {stopId -> onRequestStopInfo(stopId) },
+                    onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
                     stopState,
                     coroutineScope
                 )
                 (view as MapView).overlays[2] = stops
                 view.invalidate()
-                Log.e("MAP", motionEvent.toString())
             }
             false
         }
@@ -179,7 +204,6 @@ fun filteredMarkersOverlay(
                 stopState.collect {
                     var textString: String = stop.title
                     if (it.predictions.isNotEmpty()) {
-                        Log.e("direction", it.predictions.toString())
                         it.predictions.forEach { route ->
                             if (!route.directions.isNullOrEmpty()) {
                                 val routeDirection =
