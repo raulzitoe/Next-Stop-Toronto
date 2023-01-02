@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,7 +24,8 @@ import androidx.navigation.navArgument
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.screens.favorites.FavoritesScreen
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
-import com.raulvieira.nextstoptoronto.screens.map.SecondScreen
+import com.raulvieira.nextstoptoronto.screens.map.MapScreen
+import com.raulvieira.nextstoptoronto.screens.nearme.NearMeScreen
 import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoScreen
 import com.raulvieira.nextstoptoronto.screens.stopinfo.StopInfoScreen
 
@@ -33,9 +35,10 @@ fun MyAppNavHost(
     navController: NavHostController = rememberNavController(),
     startDestination: String
 ) {
-    val items = listOf(
+    val bottomBarItems = listOf(
         listOf(Screen.Home, Icons.Filled.Home, stringResource(id = R.string.home)),
         listOf(Screen.MapScreen, Icons.Filled.Public, stringResource(id = R.string.map)),
+        listOf(Screen.NearMeScreen, Icons.Filled.NearMe, stringResource(id = R.string.near_me)),
         listOf(
             Screen.FavoritesScreen,
             Icons.Filled.Favorite,
@@ -48,7 +51,7 @@ fun MyAppNavHost(
             NavigationBar {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
-                items.forEach { item ->
+                bottomBarItems.forEach { item ->
                     NavigationBarItem(
                         icon = {
                             Icon(
@@ -110,6 +113,7 @@ fun MyAppNavHost(
                     stopId = it.arguments?.getString("stopId") ?: " ",
                     onNavigateUp = { navController.navigateUp() })
             }
+            composable(route = Screen.NearMeScreen.route) { NearMeScreen()}
         }
     }
 }
