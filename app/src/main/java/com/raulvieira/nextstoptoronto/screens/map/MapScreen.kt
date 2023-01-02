@@ -17,7 +17,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalLifecycleComposeApi::class)
 @Composable
-fun SecondScreen(
+fun MapScreen(
     viewModel: MapScreenViewModel = hiltViewModel()
 ) {
     val permissionsState =

@@ -84,7 +84,7 @@ fun MyAppNavHost(
                     )
                 })
             }
-            composable(Screen.MapScreen.route) { SecondScreen() }
+            composable(Screen.MapScreen.route) { MapScreen() }
             composable(Screen.FavoritesScreen.route) { FavoritesScreen(onNavigateUp = { navController.navigateUp() }) }
             composable(
                 route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
