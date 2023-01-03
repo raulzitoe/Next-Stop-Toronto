@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -17,8 +15,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.components.StopPredictionCard
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
-import com.raulvieira.nextstoptoronto.screens.stopinfo.StopInfoCard
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -50,10 +48,10 @@ fun FavoritesScreen(
                     .padding(innerPadding)
                     .fillMaxSize()
             ) {
-                LazyColumn() {
+                LazyColumn {
                     items(uiState.value.predictions) { favoriteItem ->
                         favoriteItem.directions?.forEach { direction ->
-                            StopInfoCard(
+                            StopPredictionCard(
                                 predictionInfo = direction,
                                 routeTag = favoriteItem.routeTag,
                                 stopTitle = favoriteItem.stopTitle,
@@ -81,5 +79,4 @@ fun FavoritesScreen(
             }
         }
     )
-
 }
