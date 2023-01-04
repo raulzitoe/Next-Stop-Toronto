@@ -122,7 +122,8 @@ fun RoutesLazyList(
                             )
                         )
                     },
-                    favoriteButtonChecked = checkFavoritedItem(prediction)
+                    favoriteButtonChecked = checkFavoritedItem(prediction),
+                    distanceToStop = { "" }
                 )
 
             }

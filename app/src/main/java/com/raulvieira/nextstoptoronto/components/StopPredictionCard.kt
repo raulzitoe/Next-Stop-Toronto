@@ -31,7 +31,7 @@ fun StopPredictionCard(
     onClick: (String) -> Unit,
     onClickFavorite: (Boolean) -> Unit,
     favoriteButtonChecked: Boolean,
-    distanceToStop: String = ""
+    distanceToStop: () -> String
 ) {
     Card(
         modifier = Modifier
@@ -65,7 +65,7 @@ fun StopPredictionCard(
                     }
                     Text(
                         predictionInfo.title
-                                + if (distanceToStop.isNotEmpty()) " - $distanceToStop" else ""
+                                + if (distanceToStop().isNotEmpty()) " - ${distanceToStop()}" else ""
                     )
 
                 }
@@ -142,6 +142,6 @@ fun StopPredictionCardPreview() {
         onClick = {},
         onClickFavorite = {},
         favoriteButtonChecked = true,
-        distanceToStop = "300m"
+        distanceToStop = {"12"}
     )
 }

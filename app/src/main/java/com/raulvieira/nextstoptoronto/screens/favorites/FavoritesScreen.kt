@@ -71,7 +71,8 @@ fun FavoritesScreen(
                                     favoriteItem.stopTag,
                                     favoriteItem.routeTag,
                                     favoriteItem.stopTitle
-                                ).collectAsStateWithLifecycle(initialValue = false).value
+                                ).collectAsStateWithLifecycle(initialValue = false).value,
+                                distanceToStop = { "" }
                             )
                         }
                     }
