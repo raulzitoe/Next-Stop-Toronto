@@ -114,7 +114,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 Column {
 //                    Text(text = " Lat: ${locationFromGps.value?.latitude} Lon: ${locationFromGps.value?.longitude}")
                     LazyColumn {
-                        items(uiState.value.predictions) { prediction ->
+                        items(uiState.value.predictions.sortedBy { viewModel.calculateStopDistance(it.stopTag) }) { prediction ->
 
                             prediction.directions?.forEach { direction ->
                                 StopPredictionCard(
@@ -125,7 +125,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                                     onClickFavorite = { },
                                     favoriteButtonChecked = false,
                                     distanceToStop = {
-                                        "0.4 Km"
+                                        viewModel.calculateStopDistance(prediction.stopTag)
                                     }
                                 )
                             }

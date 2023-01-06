@@ -62,7 +62,7 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
                             distance
                         )
                     }
-                    if (distance[0] < 200) {
+                    if (distance[0] < 500) {
                         stops.add(stop)
                     }
                 }
@@ -73,6 +73,18 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
                 subscribeToStopStream()
             }
         }
+    }
+
+    fun calculateStopDistance(stopTag: String): String {
+        val stop = stopsNearby.find { it.stopTag == stopTag }
+        val distance = FloatArray(1)
+        stop?.let { stopData ->
+
+            userLocation?.let {
+                Location.distanceBetween(it.latitude, it.longitude, stopData.latitude.toDouble(), stopData.longitude.toDouble(), distance)
+            }
+        }
+        return "%.1f Km".format(distance[0]/1000)
     }
 
 
