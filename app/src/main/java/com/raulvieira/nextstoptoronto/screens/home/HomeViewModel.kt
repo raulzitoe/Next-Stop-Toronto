@@ -19,7 +19,6 @@ class HomeViewModel @Inject constructor(private val repository: Repository) : Vi
     )
     val uiState: StateFlow<RouteListModel> = _uiState
 
-
     init {
         getRouteList()
     }

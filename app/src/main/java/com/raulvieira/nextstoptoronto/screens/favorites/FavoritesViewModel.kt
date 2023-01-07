@@ -33,10 +33,6 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        cancelScope()
-    }
-
-    private fun cancelScope() {
         job.cancel()
     }
 
@@ -44,10 +40,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getFavorites().flatMapLatest { fav ->
             if (fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(listOf()))
-            val stopsDataFormatted: MutableList<String> = mutableListOf()
-            fav.forEach {
-                stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
-            }
+            val stopsDataFormatted = fav.map { it.routeTag + "|" + it.stopTag }
             repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
         }
     }

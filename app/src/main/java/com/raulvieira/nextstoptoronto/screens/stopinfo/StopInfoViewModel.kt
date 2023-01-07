@@ -6,6 +6,7 @@ import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -36,10 +37,6 @@ class StopInfoViewModel @Inject constructor(
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        cancelScope()
-    }
-
-    private fun cancelScope() {
         job.cancel()
     }
 
@@ -64,15 +61,14 @@ class StopInfoViewModel @Inject constructor(
             }
     }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getStopPrediction(_stopId ?: "").flatMapLatest { stopPrediction ->
-            if (stopPrediction == null || stopPrediction.predictions.isEmpty()) return@flatMapLatest flowOf(
-                StopPredictionModel(listOf())
-            )
-            val stopsDataFormatted: MutableList<String> = mutableListOf()
-            stopPrediction.predictions.forEach {
-                stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+            if (stopPrediction == null || stopPrediction.predictions.isEmpty()) {
+                return@flatMapLatest flowOf(StopPredictionModel(listOf()))
             }
+            val stopsDataFormatted =
+                stopPrediction.predictions.map { it.routeTag + "|" + it.stopTag }
             repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
         }
     }

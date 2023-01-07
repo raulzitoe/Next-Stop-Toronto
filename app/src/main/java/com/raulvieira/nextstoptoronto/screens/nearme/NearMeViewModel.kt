@@ -34,16 +34,8 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
             return field
         }
 
-    override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-    }
-
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        cancelScope()
-    }
-
-    private fun cancelScope() {
         job.cancel()
     }
 
@@ -104,13 +96,10 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
         stopId: String
     ): Flow<StopPredictionModel?> {
         return repository.getStopPrediction(stopId).flatMapLatest { stopPrediction ->
-            if (stopPrediction == null || stopPrediction.predictions.isEmpty()) return@flatMapLatest flowOf(
-                StopPredictionModel(listOf())
-            )
-            val stopsDataFormatted: MutableList<String> = mutableListOf()
-            stopPrediction.predictions.forEach {
-                stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
+            if (stopPrediction == null || stopPrediction.predictions.isEmpty()){
+                return@flatMapLatest flowOf(StopPredictionModel(listOf()))
             }
+            val stopsDataFormatted = stopPrediction.predictions.map { it.routeTag + "|" + it.stopTag }
             repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
         }
     }
