@@ -77,7 +77,7 @@ fun MyAppNavHost(
     ) { innerPadding ->
         NavHost(
             navController,
-            startDestination = Screen.Home.route,
+            startDestination = startDestination,
             Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
@@ -88,7 +88,7 @@ fun MyAppNavHost(
                 })
             }
             composable(Screen.MapScreen.route) { MapScreen() }
-            composable(Screen.FavoritesScreen.route) { FavoritesScreen(onNavigateUp = { navController.navigateUp() }) }
+            composable(Screen.FavoritesScreen.route) { FavoritesScreen() }
             composable(
                 route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
                 arguments = listOf(navArgument("routeTag") { type = NavType.StringType })
