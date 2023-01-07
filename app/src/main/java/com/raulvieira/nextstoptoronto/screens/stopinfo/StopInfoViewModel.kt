@@ -58,7 +58,7 @@ class StopInfoViewModel @Inject constructor(
         routeTag: String,
         stopTitle: String
     ): SharedFlow<Boolean> = flow {
-        repository.isOnCartDatabase(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
+        repository.isRouteFavorited(stopTag = stopTag, routeTag = routeTag, stopTitle = stopTitle)
             .collect {
                 emit(it)
             }

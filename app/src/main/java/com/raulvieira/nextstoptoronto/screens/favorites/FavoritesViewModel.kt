@@ -43,7 +43,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getFavorites().flatMapLatest { fav ->
-            if(fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(listOf()))
+            if (fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(listOf()))
             val stopsDataFormatted: MutableList<String> = mutableListOf()
             fav.forEach {
                 stopsDataFormatted.add(it.routeTag + "|" + it.stopTag)
@@ -67,7 +67,7 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
         routeTag: String,
         stopTitle: String
     ): SharedFlow<Boolean> = flow {
-        repository.isOnCartDatabase2(
+        repository.isRouteFavorited(
             stopTag = stopTag,
             routeTag = routeTag,
             stopTitle = stopTitle

@@ -18,22 +18,23 @@ interface RoomDao {
     suspend fun removeFromFavorites(stopTag: String, routeTag: String)
 
     @Query("SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle")
-    fun getItemFromFavorites(stopTag: String, routeTag: String, stopTitle: String): Flow<FavoritesModel?>
+    fun getItemFromFavorites(
+        stopTag: String,
+        routeTag: String,
+        stopTitle: String
+    ): Flow<FavoritesModel?>
 
     @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle)")
-    fun isOnCartDatabase(stopTag: String, routeTag: String, stopTitle: String) : Flow<Boolean>
-
-    @Query("SELECT EXISTS(SELECT * FROM favorites_table WHERE stopTag = :stopTag AND routeTag = :routeTag AND stopTitle = :stopTitle)")
-    fun isOnCartDatabase2(stopTag: String, routeTag: String, stopTitle: String) : Flow<Boolean>
+    fun isRouteFavorited(stopTag: String, routeTag: String, stopTitle: String): Flow<Boolean>
 
     @Query("SELECT * FROM favorites_table")
-    fun getFavorites() : Flow<List<FavoritesModel>>
+    fun getFavorites(): Flow<List<FavoritesModel>>
 
     @Upsert
     suspend fun insertStopToDatabase(stop: StopModel)
 
     @Query("SELECT * FROM stops_table")
-    fun getStopsFromDatabase() : Flow<List<StopModel>>
+    fun getStopsFromDatabase(): Flow<List<StopModel>>
 
     @Upsert
     suspend fun setLastUpdatedDate(dateModel: DateDatabaseModel)
