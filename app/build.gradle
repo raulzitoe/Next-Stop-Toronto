@@ -47,6 +47,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+        freeCompilerArgs += [
+                "-Xopt-in=kotlin.RequiresOptIn"
+        ]
     }
     buildFeatures {
         compose true
@@ -102,7 +105,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
 
     // Room
-    def room_version = "2.5.0-beta02"
+    def room_version = "2.5.0-rc01"
     implementation "androidx.room:room-ktx:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
