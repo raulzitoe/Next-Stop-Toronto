@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
+import com.raulvieira.nextstoptoronto.models.RouteListModel
 
 @OptIn(ExperimentalLifecycleComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +35,7 @@ fun HomeScreen(
 
 ) {
     val routes by viewModel.uiState.collectAsStateWithLifecycle()
-    var searchText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+    var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
     var searchVisible by remember { mutableStateOf(false) }
@@ -58,66 +59,100 @@ fun HomeScreen(
                     }
                 }
             )
-        },
-        content = { innerPadding ->
-            Surface(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                Column {
-                    AnimatedVisibility(visible = searchVisible) {
-                        TextField(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp)
-                                .focusRequester(focusRequester),
-                            value = searchText,
-                            onValueChange = { searchText = it },
-                            label = { Text("Search") }
-                        )
-                    }
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 150.dp)
-                    ) {
-                        items(items = routes.routeList.filter {
-                            val words = searchText.text.split("\\s+".toRegex()).map { word ->
-                                word.replace("""^[,\.]|[,\.]$""".toRegex(), "")
-                            }
-                            var containsWord: Boolean = true
-                            words.forEach { word ->
-                                containsWord =
-                                    containsWord && it.title.contains(word, ignoreCase = true)
-                            }
-                            containsWord
-
-                        },
-                            key = { it.routeTag }
-                        ) { route ->
-                            RouteCard(
-                                modifier = Modifier.height(60.dp),
-                                route = route,
-                                onClick = { onNavigate(route.routeTag) })
-                        }
-                    }
-                }
+        }
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column {
+                AnimatedSearchField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                        .focusRequester(focusRequester),
+                    searchVisible = searchVisible,
+                    searchedText = searchedText,
+                    onValueChange = { searchedText = it }
+                )
+                RouteGrid(
+                    modifier = Modifier.padding(horizontal = 5.dp),
+                    routes = routes,
+                    searchedText = searchedText,
+                    onClickRoute = { onNavigate(it) })
             }
-        })
-
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteCard(modifier: Modifier, route: RouteLineModel, onClick: () -> Unit) {
-    Card(modifier = modifier.padding(5.dp), onClick = onClick) {
-        Box(modifier = Modifier.fillMaxSize()) {
+fun AnimatedSearchField(
+    modifier: Modifier = Modifier,
+    searchVisible: Boolean,
+    searchedText: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit
+) {
+    AnimatedVisibility(visible = searchVisible) {
+        TextField(
+            modifier = modifier,
+            value = searchedText,
+            onValueChange = { onValueChange(it) },
+            label = { Text("Search") }
+        )
+    }
+}
+
+@Composable
+fun RouteGrid(
+    modifier: Modifier = Modifier,
+    routes: RouteListModel,
+    searchedText: TextFieldValue,
+    onClickRoute: (String) -> Unit
+) {
+    LazyVerticalGrid(
+        modifier = modifier,
+        columns = GridCells.Adaptive(minSize = 150.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        items(items = routes.routeList.filter {
+            val words = searchedText.text.split("\\s+".toRegex()).map { word ->
+                word.replace("""^[,\.]|[,\.]$""".toRegex(), "")
+            }
+            var containsWord: Boolean = true
+            words.forEach { word ->
+                containsWord =
+                    containsWord && it.title.contains(word, ignoreCase = true)
+            }
+            containsWord
+
+        },
+            key = { it.routeTag }
+        ) { route ->
+            RouteCard(
+                route = route,
+                onClick = { onClickRoute(route.routeTag) })
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RouteCard(modifier: Modifier = Modifier, route: RouteLineModel, onClick: () -> Unit) {
+    Card(modifier = modifier.wrapContentSize(), onClick = onClick) {
+        Box(
+            modifier = Modifier
+                .wrapContentHeight()
+                .fillMaxWidth()
+        ) {
             Text(
                 text = route.title,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(5.dp),
+                    .padding(10.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -125,8 +160,33 @@ fun RouteCard(modifier: Modifier, route: RouteLineModel, onClick: () -> Unit) {
     }
 }
 
+@Preview
+@Composable
+fun AnimatedSearchFieldPreview() {
+    AnimatedSearchField(
+        searchVisible = true,
+        searchedText = TextFieldValue("Text to Search"),
+        onValueChange = {})
+}
+
 @Preview(showBackground = true)
 @Composable
-fun BusCardPreview() {
-    RouteCard(modifier = Modifier, RouteLineModel("41", "41 - Keele"), onClick = {})
+fun RouteCardPreview() {
+    RouteCard(route = RouteLineModel("41", "41 - Keele"), onClick = {})
+}
+
+@Preview
+@Composable
+fun RouteGridPreview() {
+    RouteGrid(
+        routes = RouteListModel(
+            listOf(
+                RouteLineModel(routeTag = "41", title = "41-Keele"),
+                RouteLineModel(routeTag = "42", title = "42-Keele"),
+                RouteLineModel(routeTag = "43", title = "43-Keele"),
+                RouteLineModel(routeTag = "44", title = "44-Keele")
+            )
+        ),
+        searchedText = TextFieldValue(""),
+        onClickRoute = {})
 }
