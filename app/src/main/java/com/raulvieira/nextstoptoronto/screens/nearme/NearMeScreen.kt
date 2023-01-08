@@ -4,19 +4,12 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -27,10 +20,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
 import com.raulvieira.nextstoptoronto.R
-import com.raulvieira.nextstoptoronto.components.StopPredictionCard
-import com.raulvieira.nextstoptoronto.models.StopModel
+import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
+import com.raulvieira.nextstoptoronto.models.FavoritesModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class,
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class,
     ExperimentalPermissionsApi::class
 )
 @Composable
@@ -54,10 +48,13 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         )
     val locationFromGps: MutableState<Location?> = remember { mutableStateOf(null) }
     val context = LocalContext.current
-    val fusedLocationProviderClient = remember { LocationServices.getFusedLocationProviderClient(
-        context) }
+    val fusedLocationProviderClient = remember {
+        LocationServices.getFusedLocationProviderClient(
+            context
+        )
+    }
 
-    LaunchedEffect(key1 = Unit ) {
+    LaunchedEffect(key1 = Unit) {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -104,62 +101,40 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                     Text(stringResource(id = R.string.near_me))
                 }
             )
-        },
-        content = { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-            ) {
-                Column {
-//                    Text(text = " Lat: ${locationFromGps.value?.latitude} Lon: ${locationFromGps.value?.longitude}")
-                    LazyColumn {
-                        items(uiState.value.predictions.sortedBy { viewModel.calculateStopDistance(it.stopTag) }) { prediction ->
-
-                            prediction.directions?.forEach { direction ->
-                                StopPredictionCard(
-                                    predictionInfo = direction,
-                                    routeTag = prediction.routeTag,
-                                    stopTitle = prediction.stopTitle,
-                                    onClick = { },
-                                    onClickFavorite = { },
-                                    favoriteButtonChecked = false,
-                                    distanceToStop = {
-                                        viewModel.calculateStopDistance(prediction.stopTag)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NearMeCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
-    Card(
-        modifier = Modifier
-            .height(60.dp)
-            .padding(10.dp), onClick = { onClick(routeInfo.stopId) }
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = routeInfo.title, textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(5.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            StopsLazyColumn(
+                predictions = uiState.value.predictions.sortedBy {
+                    viewModel.calculateStopDistance(it.stopTag)
+                },
+                onClickFavoriteItem = { isChecked, favoriteItem ->
+                    viewModel.handleFavoriteItem(
+                        isChecked,
+                        FavoritesModel(
+                            id = 0,
+                            routeTag = favoriteItem.routeTag,
+                            stopTag = favoriteItem.stopTag,
+                            stopTitle = favoriteItem.stopTitle
+                        )
+                    )
+                },
+                favoriteButtonChecked = { routeToCheck ->
+                    viewModel.isRouteFavorited(
+                        routeToCheck.stopTag,
+                        routeToCheck.routeTag,
+                        routeToCheck.stopTitle
+                    ).collectAsStateWithLifecycle(initialValue = false).value
+                },
+                distanceToStop = { routePredictionItem ->
+                    viewModel.calculateStopDistance(routePredictionItem.stopTag)
+                }
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun NearMeScreenPreview() {
-    NearMeCard(routeInfo = StopModel("99", "1000", "43.656339", "-79.460403", "Some Rd at Some Avenue"), onClick = {})
 }

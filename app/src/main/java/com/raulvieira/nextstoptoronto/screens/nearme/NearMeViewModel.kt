@@ -6,6 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.Repository
+import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -101,6 +102,30 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
             }
             val stopsDataFormatted = stopPrediction.predictions.map { it.routeTag + "|" + it.stopTag }
             repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
+        }
+    }
+
+    fun isRouteFavorited(
+        stopTag: String,
+        routeTag: String,
+        stopTitle: String
+    ): SharedFlow<Boolean> = flow {
+        repository.isRouteFavorited(
+            stopTag = stopTag,
+            routeTag = routeTag,
+            stopTitle = stopTitle
+        ).collect {
+            emit(it)
+        }
+    }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
+
+    fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
+        viewModelScope.launch {
+            if (isButtonChecked) {
+                repository.addToFavorites(item)
+            } else {
+                repository.removeFromFavorites(item.stopTag, item.routeTag)
+            }
         }
     }
 }

@@ -2,8 +2,6 @@ package com.raulvieira.nextstoptoronto.screens.favorites
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -11,16 +9,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
-import com.raulvieira.nextstoptoronto.components.StopPredictionCard
+import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
-import com.raulvieira.nextstoptoronto.models.PredictionModel
-import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
-import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
 @Composable
@@ -52,7 +46,7 @@ fun FavoritesScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            FavoritesLazyColumn(
+            StopsLazyColumn(
                 predictions = uiState.predictions,
                 onClickFavoriteItem = { isChecked, favoriteItem ->
                     viewModel.handleFavoriteItem(
@@ -71,91 +65,8 @@ fun FavoritesScreen(
                         routeToCheck.routeTag,
                         routeToCheck.stopTitle
                     ).collectAsStateWithLifecycle(initialValue = false).value
-                })
+                },
+                distanceToStop = { "" })
         }
     }
-}
-
-@Composable
-fun FavoritesLazyColumn(
-    predictions: List<RoutePredictionsModel>,
-    onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
-    favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean
-) {
-    LazyColumn {
-        items(predictions) { favoriteItem ->
-            favoriteItem.directions?.forEach { direction ->
-                StopPredictionCard(
-                    predictionInfo = direction,
-                    routeTag = favoriteItem.routeTag,
-                    stopTitle = favoriteItem.stopTitle,
-                    onClick = { },
-                    onClickFavorite = { isChecked -> onClickFavoriteItem(isChecked, favoriteItem) },
-                    favoriteButtonChecked = favoriteButtonChecked(favoriteItem),
-                    distanceToStop = { "" }
-                )
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun FavoritesLazyColumnPreview() {
-    FavoritesLazyColumn(
-        predictions = listOf(
-            RoutePredictionsModel(
-                routeTag = "41",
-                stopTag = "1234",
-                routeTitle = "41-Keele Towards somewhere",
-                stopTitle = "Keele St at that St",
-                directions = listOf(
-                    PredictionModel(
-                        title = "41-Keele Towards somewhere",
-                        predictions = listOf(
-                            SinglePredictionModel(
-                                "41",
-                                vehicle = "1234",
-                                minutes = "1",
-                                seconds = "1"
-                            ),
-                            SinglePredictionModel(
-                                "41",
-                                vehicle = "1234",
-                                minutes = "1",
-                                seconds = "1"
-                            )
-                        )
-                    )
-                )
-            ),
-            RoutePredictionsModel(
-                routeTag = "41",
-                stopTag = "1234",
-                routeTitle = "41-Keele Towards somewhere",
-                stopTitle = "Keele St at that St",
-                directions = listOf(
-                    PredictionModel(
-                        title = "41-Keele Towards somewhere",
-                        predictions = listOf(
-                            SinglePredictionModel(
-                                "41",
-                                vehicle = "1234",
-                                minutes = "1",
-                                seconds = "1"
-                            ),
-                            SinglePredictionModel(
-                                "41",
-                                vehicle = "1234",
-                                minutes = "1",
-                                seconds = "1"
-                            )
-                        )
-                    )
-                )
-            )
-        ),
-        onClickFavoriteItem = { _, _ -> },
-        favoriteButtonChecked = { true }
-    )
 }
