@@ -1,6 +1,5 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.database
 
-import com.raulvieira.nextstoptoronto.database.RoomDao
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel

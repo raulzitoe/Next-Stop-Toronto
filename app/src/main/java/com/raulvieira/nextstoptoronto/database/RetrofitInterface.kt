@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto
+package com.raulvieira.nextstoptoronto.database
 
 import com.raulvieira.nextstoptoronto.models.RouteConfigModel
 import com.raulvieira.nextstoptoronto.models.RouteListModel
@@ -26,12 +26,12 @@ interface RetrofitInterface {
         @Query("r") routeTag: String
     ): Response<RouteConfigModel>
 
-    @GET("publicJSONFeed?command=predictions")
-    suspend fun requestStopPredictionByRoute(
-        @Query("a") agency: String = "ttc",
-        @Query("r") routeTag: String,
-        @Query("s") stopTag: String
-    ): Response<StopPredictionModel>
+//    @GET("publicJSONFeed?command=predictions")
+//    suspend fun requestStopPredictionByRoute(
+//        @Query("a") agency: String = "ttc",
+//        @Query("r") routeTag: String,
+//        @Query("s") stopTag: String
+//    ): Response<StopPredictionModel>
 
     @GET("publicJSONFeed?command=predictionsForMultiStops")
     suspend fun requestPredictionsForMultiStops(
