@@ -2,7 +2,7 @@ package com.raulvieira.nextstoptoronto.screens.routeinfo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.raulvieira.nextstoptoronto.Repository
+import com.raulvieira.nextstoptoronto.database.Repository
 import com.raulvieira.nextstoptoronto.models.RouteModel
 import com.raulvieira.nextstoptoronto.models.RouteConfigModel
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -1,7 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.stopinfo
 
 import androidx.lifecycle.*
-import com.raulvieira.nextstoptoronto.Repository
+import com.raulvieira.nextstoptoronto.database.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel

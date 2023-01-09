@@ -1,27 +1,27 @@
 package com.raulvieira.nextstoptoronto.screens.stopinfo
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.raulvieira.nextstoptoronto.components.StopPredictionCard
+import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
+import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
+import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
 @Composable
 fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
     routeTag: String,
-    stopId: String,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,11 +58,22 @@ fun StopInfoScreen(
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
-                    RoutesLazyList(
-                        routePredictions = uiState.predictions.filter {
+                    StopsLazyColumn(
+                        predictions = uiState.predictions.filter {
                             it.routeTag == routeTag
                         },
-                        checkFavoritedItem = { prediction ->
+                        onClickFavoriteItem = { isChecked, favoriteItem ->
+                            viewModel.handleFavoriteItem(
+                                isChecked,
+                                FavoritesModel(
+                                    id = 0,
+                                    routeTag = favoriteItem.routeTag,
+                                    stopTag = favoriteItem.stopTag,
+                                    stopTitle = favoriteItem.stopTitle
+                                )
+                            )
+                        },
+                        favoriteButtonChecked = { prediction ->
                             val isFavorited by viewModel.isRouteFavorited(
                                 prediction.stopTag,
                                 prediction.routeTag,
@@ -70,16 +81,26 @@ fun StopInfoScreen(
                             ).collectAsStateWithLifecycle(initialValue = false)
                             isFavorited
                         },
-                        handleFavoriteCheck = { isChecked, favoriteModel ->
-                            viewModel.handleFavoriteItem(isChecked, favoriteModel)
-                        })
+                        distanceToStop = { "" }
+                    )
                     if (uiState.predictions.size > 1) {
                         Text("Other lines at this stop: ")
-                        RoutesLazyList(
-                            routePredictions = uiState.predictions.filter {
+                        StopsLazyColumn(
+                            predictions = uiState.predictions.filter {
                                 it.routeTag != routeTag
                             },
-                            checkFavoritedItem = { prediction ->
+                            onClickFavoriteItem = { isChecked, favoriteItem ->
+                                viewModel.handleFavoriteItem(
+                                    isChecked,
+                                    FavoritesModel(
+                                        id = 0,
+                                        routeTag = favoriteItem.routeTag,
+                                        stopTag = favoriteItem.stopTag,
+                                        stopTitle = favoriteItem.stopTitle
+                                    )
+                                )
+                            },
+                            favoriteButtonChecked = { prediction ->
                                 val isFavorited by viewModel.isRouteFavorited(
                                     prediction.stopTag,
                                     prediction.routeTag,
@@ -87,9 +108,7 @@ fun StopInfoScreen(
                                 ).collectAsStateWithLifecycle(initialValue = false)
                                 isFavorited
                             },
-                            handleFavoriteCheck = { isChecked, favoriteModel ->
-                                viewModel.handleFavoriteItem(isChecked, favoriteModel)
-                            })
+                            distanceToStop = { "" })
                     }
                 }
             }
@@ -97,36 +116,64 @@ fun StopInfoScreen(
     )
 }
 
+@Preview
 @Composable
-fun RoutesLazyList(
-    routePredictions: List<RoutePredictionsModel>,
-    checkFavoritedItem: @Composable (RoutePredictionsModel) -> Boolean,
-    handleFavoriteCheck: (Boolean, FavoritesModel) -> Unit
-) {
-    LazyColumn() {
-        items(routePredictions) { prediction ->
-
-            prediction.directions?.forEach { direction ->
-                StopPredictionCard(
-                    predictionInfo = direction,
-                    routeTag = prediction.routeTag,
-                    onClick = { },
-                    onClickFavorite = { isChecked ->
-                        handleFavoriteCheck(
-                            isChecked,
-                            FavoritesModel(
-                                id = 0,
-                                routeTag = prediction.routeTag,
-                                stopTag = prediction.stopTag,
-                                stopTitle = prediction.stopTitle
+fun StopInfoScreenLazyColumnPreview() {
+    StopsLazyColumn(
+        predictions = listOf(
+            RoutePredictionsModel(
+                routeTag = "41",
+                stopTag = "1234",
+                routeTitle = "41-Keele Towards somewhere",
+                stopTitle = "Keele St at that St",
+                directions = listOf(
+                    PredictionModel(
+                        title = "41-Keele Towards somewhere",
+                        predictions = listOf(
+                            SinglePredictionModel(
+                                "41",
+                                vehicle = "1234",
+                                minutes = "1",
+                                seconds = "1"
+                            ),
+                            SinglePredictionModel(
+                                "41",
+                                vehicle = "1234",
+                                minutes = "1",
+                                seconds = "1"
                             )
                         )
-                    },
-                    favoriteButtonChecked = checkFavoritedItem(prediction),
-                    distanceToStop = { "" }
+                    )
                 )
-
-            }
-        }
-    }
+            ),
+            RoutePredictionsModel(
+                routeTag = "41",
+                stopTag = "1234",
+                routeTitle = "41-Keele Towards somewhere",
+                stopTitle = "Keele St at that St",
+                directions = listOf(
+                    PredictionModel(
+                        title = "41-Keele Towards somewhere",
+                        predictions = listOf(
+                            SinglePredictionModel(
+                                "41",
+                                vehicle = "1234",
+                                minutes = "1",
+                                seconds = "1"
+                            ),
+                            SinglePredictionModel(
+                                "41",
+                                vehicle = "1234",
+                                minutes = "1",
+                                seconds = "1"
+                            )
+                        )
+                    )
+                )
+            )
+        ),
+        onClickFavoriteItem = { _, _ -> },
+        favoriteButtonChecked = { true },
+        distanceToStop = {""}
+    )
 }

@@ -91,17 +91,17 @@ fun RouteInfoScreen(
                             label = { Text("Search") }
                         )
                     }
-                    LazyColumn() {
+                    LazyColumn {
                         items(
                             items = uiState.route.stopsList
                                 .filter {
-                                   !it.stopId.isNullOrBlank()
+                                    it.stopId.isNotBlank()
                                 }
                                 .filter {
                                 val words = searchText.text.split("\\s+".toRegex()).map { word ->
-                                    word.replace("""^[,\.]|[,\.]$""".toRegex(), "")
+                                    word.replace("""^[,.]|[,.]$""".toRegex(), "")
                                 }
-                                var containsWord: Boolean = true
+                                var containsWord = true
                                 words.forEach { word->
                                    containsWord = containsWord && it.title.contains(word, ignoreCase = true)
                                 }

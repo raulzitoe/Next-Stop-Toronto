@@ -119,9 +119,9 @@ fun RouteGrid(
     ) {
         items(items = routes.routeList.filter {
             val words = searchedText.text.split("\\s+".toRegex()).map { word ->
-                word.replace("""^[,\.]|[,\.]$""".toRegex(), "")
+                word.replace("""^[,.]|[,.]$""".toRegex(), "")
             }
-            var containsWord: Boolean = true
+            var containsWord = true
             words.forEach { word ->
                 containsWord =
                     containsWord && it.title.contains(word, ignoreCase = true)

@@ -110,7 +110,6 @@ fun MyAppNavHost(
             ) {
                 StopInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
-                    stopId = it.arguments?.getString("stopId") ?: " ",
                     onNavigateUp = { navController.navigateUp() })
             }
             composable(route = Screen.NearMeScreen.route) { NearMeScreen()}
