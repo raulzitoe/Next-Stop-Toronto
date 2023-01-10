@@ -2,7 +2,6 @@ package com.raulvieira.nextstoptoronto.screens.nearme
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,13 +18,14 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
+import com.raulvieira.nextstoptoronto.utils.locationFlow
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class,
@@ -50,12 +50,22 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
-    val locationFromGps: MutableState<Location?> = remember { mutableStateOf(null) }
     val context = LocalContext.current
-    val fusedLocationProviderClient = remember {
+    val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(
             context
         )
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        fusedLocationClient.locationFlow(this).collect { location ->
+            if (viewModel.userLocation?.latitude != location?.latitude
+                && viewModel.userLocation?.longitude != location?.longitude) {
+                location?.let {
+                    viewModel.userLocationFlow.emit(it)
+                }
+            }
+        }
     }
 
     LaunchedEffect(key1 = Unit) {
@@ -76,14 +86,6 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
             // for ActivityCompat#requestPermissions for more details.
             return@LaunchedEffect
         }
-        fusedLocationProviderClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                if (location != null) {
-                    locationFromGps.value = location
-                    viewModel.userLocation = location
-                    viewModel.getStopsNearby()
-                }
-            }
     }
 
     DisposableEffect(key1 = lifecycleOwner) {
@@ -201,6 +203,6 @@ fun StopsLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = {"0.2 Km"}
+        distanceToStop = { "0.2 Km" }
     )
 }
