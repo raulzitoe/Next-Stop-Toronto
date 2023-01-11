@@ -4,11 +4,13 @@ package com.raulvieira.nextstoptoronto.screens.map
 import android.content.Context
 import android.graphics.Canvas
 import android.view.MotionEvent
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
@@ -47,23 +49,48 @@ fun MapView(
     val mapViewState = rememberMapViewWithLifecycle()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    if (stopsList.isNotEmpty()) {
+        val lifecycleObserver =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    val stopMarkersOverlay = filteredMarkersOverlay(
+                        context,
+                        stopsList,
+                        mapViewState,
+                        onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
+                        stopState,
+                        coroutineScope,
+                        boundingBox = mapViewState.boundingBox
+                    )
+                    mapViewState.overlays[2] = stopMarkersOverlay
+                }
+            }
+        DisposableEffect(lifecycle) {
+            lifecycle.addObserver(lifecycleObserver)
+            onDispose {
+                lifecycle.removeObserver(lifecycleObserver)
+            }
+        }
+    }
 
     AndroidView(
         factory = { mapViewState },
         modifier = modifier
     ) { mapView ->
-
         with(mapView) {
             // Clear overlays to avoid duplicating
             overlays.clear()
             // This fixes mapview overflowing parent layout
             clipToOutline = true
 
-            controller.setZoom(START_ZOOM)
             controller.setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
+            controller.setZoom(START_ZOOM)
             setMultiTouchControls(true)
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         }
+
 
         val mapNorthCompassOverlay = object : CompassOverlay(context, mapView) {
             override fun draw(c: Canvas?, pProjection: Projection?) {
@@ -123,19 +150,13 @@ fun MapView(
             }
         })
 
-        // Markers for each stop
-        val stopMarkersOverlay = filteredMarkersOverlay(
-            context,
-            stopsList,
-            mapView,
-            onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
-            stopState,
-            coroutineScope
-        )
-
-
         val overlays =
-            listOf(rotationOverlay, stopMarkersOverlay, locationOverlay, mapNorthCompassOverlay)
+            listOf(
+                rotationOverlay,
+                RadiusMarkerClusterer(context),
+                locationOverlay,
+                mapNorthCompassOverlay
+            )
         mapView.overlays.addAll(overlays)
 
         mapView.setOnTouchListener { view, motionEvent ->
@@ -147,7 +168,8 @@ fun MapView(
                     mapView,
                     onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
                     stopState,
-                    coroutineScope
+                    coroutineScope,
+                    boundingBox = mapView.boundingBox
                 )
                 (view as MapView).overlays[2] = stops
                 view.invalidate()
@@ -180,14 +202,15 @@ fun filteredMarkersOverlay(
     mapView: MapView,
     onRequestStopInfo: (stopId: String) -> Unit,
     stopState: StateFlow<StopPredictionModel>,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    boundingBox: BoundingBox
 ): RadiusMarkerClusterer {
     val stopMarkersOverlay = RadiusMarkerClusterer(context)
     for (stop in stopsList) {
         if (!isStopWithinBoundBox(
                 stop.latitude.toDouble(),
                 stop.longitude.toDouble(),
-                mapView.boundingBox
+                boundingBox = boundingBox
             )
         ) continue
 
