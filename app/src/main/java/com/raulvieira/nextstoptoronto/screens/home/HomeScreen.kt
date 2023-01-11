@@ -1,6 +1,5 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,6 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
 import com.raulvieira.nextstoptoronto.models.RouteListModel
 
@@ -84,24 +84,6 @@ fun HomeScreen(
                     onClickRoute = { onNavigate(it) })
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AnimatedSearchField(
-    modifier: Modifier = Modifier,
-    searchVisible: Boolean,
-    searchedText: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit
-) {
-    AnimatedVisibility(visible = searchVisible) {
-        TextField(
-            modifier = modifier,
-            value = searchedText,
-            onValueChange = { onValueChange(it) },
-            label = { Text("Search") }
-        )
     }
 }
 
