@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +29,7 @@ fun MapScreen(
             )
         )
     val lifecycleOwner = LocalLifecycleOwner.current
+    val stopsList by viewModel.stopList.collectAsStateWithLifecycle()
 
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -48,7 +50,7 @@ fun MapScreen(
             modifier = Modifier.fillMaxSize(),
             onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
             stopState = viewModel.stopState,
-            stopsList = viewModel.stopList.collectAsStateWithLifecycle().value
+            stopsList = stopsList
         )
     }
 }
