@@ -9,7 +9,7 @@ import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 
 @Composable
-fun StopsLazyColumn(
+fun StopsPredictionLazyColumn(
     predictions: List<RoutePredictionsModel>,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
@@ -36,7 +36,7 @@ fun StopsLazyColumn(
 @Preview
 @Composable
 fun StopsLazyColumnPreview() {
-    StopsLazyColumn(
+    StopsPredictionLazyColumn(
         predictions = listOf(
             RoutePredictionsModel(
                 routeTag = "41",

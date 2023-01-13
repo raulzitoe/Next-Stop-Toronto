@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
+import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
@@ -58,7 +58,7 @@ fun StopInfoScreen(
         content = { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
-                    StopsLazyColumn(
+                    StopsPredictionLazyColumn(
                         predictions = uiState.predictions.filter {
                             it.routeTag == routeTag
                         },
@@ -86,7 +86,7 @@ fun StopInfoScreen(
                     )
                     if (uiState.predictions.size > 1) {
                         Text("Other lines at this stop: ")
-                        StopsLazyColumn(
+                        StopsPredictionLazyColumn(
                             predictions = uiState.predictions.filter {
                                 it.routeTag != routeTag
                             },
@@ -122,7 +122,7 @@ fun StopInfoScreen(
 @Preview
 @Composable
 fun StopInfoScreenLazyColumnPreview() {
-    StopsLazyColumn(
+    StopsPredictionLazyColumn(
         predictions = listOf(
             RoutePredictionsModel(
                 routeTag = "41",

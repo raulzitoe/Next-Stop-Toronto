@@ -14,7 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
-import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
+import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
@@ -50,7 +50,7 @@ fun FavoritesScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            StopsLazyColumn(
+            StopsPredictionLazyColumn(
                 predictions = uiState.predictions,
                 onClickFavoriteItem = { isChecked, favoriteItem ->
                     viewModel.handleFavoriteItem(
@@ -80,7 +80,7 @@ fun FavoritesScreen(
 @Preview
 @Composable
 fun StopsLazyColumnPreview() {
-    StopsLazyColumn(
+    StopsPredictionLazyColumn(
         predictions = listOf(
             RoutePredictionsModel(
                 routeTag = "41",

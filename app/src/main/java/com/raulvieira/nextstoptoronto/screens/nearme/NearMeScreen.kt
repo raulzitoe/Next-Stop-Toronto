@@ -20,7 +20,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.*
 import com.raulvieira.nextstoptoronto.R
-import com.raulvieira.nextstoptoronto.components.StopsLazyColumn
+import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
@@ -115,7 +115,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            StopsLazyColumn(
+            StopsPredictionLazyColumn(
                 predictions = uiState.value.predictions.sortedBy {
                     viewModel.calculateStopDistance(it.stopTag)
                 },
@@ -148,7 +148,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
 @Preview
 @Composable
 fun StopsLazyColumnPreview() {
-    StopsLazyColumn(
+    StopsPredictionLazyColumn(
         predictions = listOf(
             RoutePredictionsModel(
                 routeTag = "41",
