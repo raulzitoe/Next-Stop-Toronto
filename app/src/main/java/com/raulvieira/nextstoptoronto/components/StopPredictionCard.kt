@@ -142,6 +142,18 @@ fun StopPredictionCard(
                     }
                 }
             }
+            if (routePredictionItem.directions.isEmpty()) {
+                Row(
+                    modifier = Modifier.padding(top = 10.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Warning, contentDescription = "Localized description")
+                    Text(
+                        text = "No predictions for this route at this moment",
+                        modifier = Modifier.padding(horizontal = 5.dp)
+                    )
+                }
+            }
         }
 
     }
