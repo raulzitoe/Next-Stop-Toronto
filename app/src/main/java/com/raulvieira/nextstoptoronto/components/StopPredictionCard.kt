@@ -149,8 +149,9 @@ fun StopPredictionCard(
                 ) {
                     Icon(Icons.Outlined.Warning, contentDescription = "Localized description")
                     Text(
-                        text = "No predictions for this route at this moment",
-                        modifier = Modifier.padding(horizontal = 5.dp)
+                        text = "No predictions at this moment",
+                        modifier = Modifier.padding(horizontal = 5.dp),
+                        fontSize = 14.sp
                     )
                 }
             }
