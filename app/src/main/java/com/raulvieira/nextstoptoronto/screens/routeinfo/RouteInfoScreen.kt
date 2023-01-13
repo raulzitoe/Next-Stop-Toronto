@@ -128,7 +128,8 @@ fun StopsLazyColumn(
                     }
                     containsWord
 
-                }.sortedBy { it.title }, key = { it.stopId }) { routeInfo ->
+                }.sortedBy { it.title },
+        ) { routeInfo ->
             StopInfoCard(
                 routeInfo = routeInfo,
                 onClick = { stopId -> onClickStopItem(stopId) })
