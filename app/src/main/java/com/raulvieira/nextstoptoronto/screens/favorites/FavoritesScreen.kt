@@ -70,7 +70,9 @@ fun FavoritesScreen(
                         routeToCheck.stopTitle
                     ).collectAsStateWithLifecycle(initialValue = false).value
                 },
-                distanceToStop = { "" })
+                distanceToStop = { "" },
+                hideEmptyRoute = false
+            )
         }
     }
 }

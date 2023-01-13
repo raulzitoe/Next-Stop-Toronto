@@ -13,19 +13,22 @@ fun StopsLazyColumn(
     predictions: List<RoutePredictionsModel>,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
-    distanceToStop: (RoutePredictionsModel) -> String
+    distanceToStop: (RoutePredictionsModel) -> String,
+    hideEmptyRoute: Boolean = true
 ) {
     LazyColumn {
         items(predictions) { routePredictionItem ->
-            StopPredictionCard(
-                routePredictionItem = routePredictionItem,
-                onClick = { },
-                onClickFavorite = { isChecked ->
-                    onClickFavoriteItem(isChecked, routePredictionItem)
-                },
-                favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
-                distanceToStop = { distanceToStop(routePredictionItem) }
-            )
+            if (!hideEmptyRoute || routePredictionItem.directions.isNotEmpty()) {
+                StopPredictionCard(
+                    routePredictionItem = routePredictionItem,
+                    onClick = { },
+                    onClickFavorite = { isChecked ->
+                        onClickFavoriteItem(isChecked, routePredictionItem)
+                    },
+                    favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
+                    distanceToStop = { distanceToStop(routePredictionItem) }
+                )
+            }
         }
     }
 }
@@ -67,6 +70,14 @@ fun StopsLazyColumnPreview() {
                 routeTitle = "41-Keele Towards somewhere",
                 stopTitle = "Keele St at that St",
                 directionTitleWhenNoPredictions = "41 - Some short turn",
+                directions = listOf()
+            ),
+            RoutePredictionsModel(
+                routeTag = "41",
+                stopTag = "1234",
+                routeTitle = "41-Keele Towards somewhere",
+                stopTitle = "Keele St at that St",
+                directionTitleWhenNoPredictions = "41 - Some short turn",
                 directions = listOf(
                     PredictionModel(
                         title = "41-Keele Towards somewhere",
@@ -90,6 +101,7 @@ fun StopsLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = { "0.2 Km" }
+        distanceToStop = { "0.2 Km" },
+        hideEmptyRoute = true
     )
 }

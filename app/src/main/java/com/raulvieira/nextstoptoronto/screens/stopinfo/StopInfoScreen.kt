@@ -81,7 +81,8 @@ fun StopInfoScreen(
                             ).collectAsStateWithLifecycle(initialValue = false)
                             isFavorited
                         },
-                        distanceToStop = { "" }
+                        distanceToStop = { "" },
+                        hideEmptyRoute = false
                     )
                     if (uiState.predictions.size > 1) {
                         Text("Other lines at this stop: ")
@@ -108,7 +109,9 @@ fun StopInfoScreen(
                                 ).collectAsStateWithLifecycle(initialValue = false)
                                 isFavorited
                             },
-                            distanceToStop = { "" })
+                            distanceToStop = { "" },
+                            hideEmptyRoute = false
+                            )
                     }
                 }
             }
