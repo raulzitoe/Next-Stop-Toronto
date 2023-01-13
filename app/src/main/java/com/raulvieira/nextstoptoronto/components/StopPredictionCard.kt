@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.DepartureBoard
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FollowTheSigns
 import androidx.compose.material.icons.outlined.Signpost
@@ -41,102 +42,111 @@ fun StopPredictionCard(
             .fillMaxWidth()
             .padding(10.dp), onClick = { }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(10.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                color = Color.Red
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        Surface(
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .padding(end = 10.dp)
-                                .align(Alignment.CenterStart),
-                            color = Color.Red,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = routePredictionItem.routeTitle,
-                                modifier = Modifier
-                                    .wrapContentSize()
-                                    .padding(vertical = 5.dp, horizontal = 5.dp),
-                                fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center,
-                                fontSize = 16.sp,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    if (distanceToStop().isNotEmpty()) {
-
-                        Surface(
-                            modifier = Modifier
-                                .wrapContentSize(),
-                            color = Color.Red,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = distanceToStop(),
-                                modifier = Modifier.padding(vertical = 5.dp, horizontal = 5.dp),
-                                fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center,
-                                color = Color.White,
-                                fontSize = 16.sp
-                            )
-
-                        }
-
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Outlined.FollowTheSigns,
-                        contentDescription = "Localized description"
+                    Text(
+                        text = routePredictionItem.routeTitle,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 10.dp, end = 5.dp),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Text(routePredictionItem.stopTitle)
-                    FavoriteStopButton(
-                        onChecked = { checkedValue -> onClickFavorite(checkedValue) },
-                        isChecked = favoriteButtonChecked
-                    )
-                }
-                routePredictionItem.directions.forEach { predictionItem ->
-                    Row {
-                        Icon(Icons.Outlined.Signpost, contentDescription = "Localized description")
-                        Text(predictionItem.title)
-                    }
-                    predictionItem.predictions.forEach { stopPrediction ->
-                        Row {
-                            val counter = remember { mutableStateOf(0) }
-                            LaunchedEffect(key1 = counter.value) {
-                                delay(1000)
-                                counter.value++
+                    Box {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (distanceToStop().isNotEmpty()) {
+                                Surface(
+                                    modifier = Modifier.wrapContentSize(),
+                                    color = Color.White,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = distanceToStop(),
+                                        modifier = Modifier.padding(5.dp),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 16.sp
+                                    )
+                                }
                             }
-                            LaunchedEffect(key1 = stopPrediction.seconds) {
-                                counter.value = 0
-                            }
-                            val predictionSeconds = stopPrediction.seconds.toInt() - counter.value
-                            val minutes = predictionSeconds / 60
-                            val seconds = predictionSeconds % 60
-                            Text(text = "Vehicle: " + stopPrediction.vehicle + " - ")
-                            Text(text = "In %02d:%02d".format(minutes, seconds))
+                            FavoriteStopButton(
+                                onChecked = { checkedValue -> onClickFavorite(checkedValue) },
+                                isChecked = favoriteButtonChecked
+                            )
                         }
                     }
                 }
             }
         }
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Outlined.FollowTheSigns,
+                    contentDescription = "Localized description"
+                )
+                Text(
+                    text = routePredictionItem.stopTitle,
+                    modifier = Modifier.padding(horizontal = 5.dp),
+                    fontWeight = FontWeight.ExtraBold,
+                )
+
+            }
+            Divider(modifier = Modifier.padding(top = 5.dp))
+            routePredictionItem.directions.forEach { predictionItem ->
+                Row(
+                    modifier = Modifier.padding(top = 10.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Signpost, contentDescription = "Localized description")
+                    Text(predictionItem.title)
+                }
+                predictionItem.predictions.forEach { stopPrediction ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 20.dp)
+                    ) {
+                        val counter = remember { mutableStateOf(0) }
+                        LaunchedEffect(key1 = counter.value) {
+                            delay(1000)
+                            counter.value++
+                        }
+                        LaunchedEffect(key1 = stopPrediction.seconds) {
+                            counter.value = 0
+                        }
+                        val predictionSeconds = stopPrediction.seconds.toInt() - counter.value
+                        val minutes = predictionSeconds / 60
+                        val seconds = predictionSeconds % 60
+                        Icon(
+                            Icons.Outlined.DepartureBoard,
+                            contentDescription = "Localized description"
+                        )
+                        Text(text = "#" + stopPrediction.vehicle + " - ")
+                        Text(text = "In %02d:%02d".format(minutes, seconds))
+                    }
+                }
+            }
+        }
+
     }
 }
 
@@ -160,7 +170,7 @@ fun StopPredictionCardPreview() {
         RoutePredictionsModel(
             routeTag = "99",
             stopTag = "123",
-            routeTitle = "99 - Crazy Street aaaasd",
+            routeTitle = "99 - Crazy Street",
             stopTitle = "Some Rd at Some Avenue",
             directionTitleWhenNoPredictions = "99 - Street short turn",
             directions = listOf(
