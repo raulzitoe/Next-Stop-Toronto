@@ -17,17 +17,15 @@ fun StopsLazyColumn(
 ) {
     LazyColumn {
         items(predictions) { routePredictionItem ->
-            routePredictionItem.directions?.forEach { direction ->
-                StopPredictionCard(
-                    predictionInfo = direction,
-                    routeTag = routePredictionItem.routeTag,
-                    stopTitle = routePredictionItem.stopTitle,
-                    onClick = { },
-                    onClickFavorite = { isChecked -> onClickFavoriteItem(isChecked, routePredictionItem) },
-                    favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
-                    distanceToStop = { distanceToStop(routePredictionItem) }
-                )
-            }
+            StopPredictionCard(
+                routePredictionItem = routePredictionItem,
+                onClick = { },
+                onClickFavorite = { isChecked ->
+                    onClickFavoriteItem(isChecked, routePredictionItem)
+                },
+                favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
+                distanceToStop = { distanceToStop(routePredictionItem) }
+            )
         }
     }
 }
@@ -92,6 +90,6 @@ fun StopsLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = {"0.2 Km"}
+        distanceToStop = { "0.2 Km" }
     )
 }
