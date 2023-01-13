@@ -13,7 +13,7 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
         context: JsonDeserializationContext?
     ): RoutePredictionsModel {
         if (json == null) {
-            return RoutePredictionsModel("", "", "", "", listOf())
+            return RoutePredictionsModel("", "", "", "", "", listOf())
         }
         val gson = GsonBuilder().apply {
             registerTypeAdapter(PredictionModel::class.java, PredictionModelDeserializer())
@@ -26,6 +26,9 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
             if (jsonObject.has("routeTitle")) jsonObject.get("routeTitle").asString else ""
         val stopTitle =
             if (jsonObject.has("stopTitle")) jsonObject.get("stopTitle").asString else ""
+        val dirTitleWhenNoPrediction =
+            if (jsonObject.has("dirTitleBecauseNoPredictions")) jsonObject.get("dirTitleBecauseNoPredictions").asString else ""
+
         val direction: ArrayList<PredictionModel> = arrayListOf()
         if (jsonObject.has("direction")) {
             val data = jsonObject.get("direction")
@@ -37,6 +40,6 @@ class RoutePredictionsDeserializer : JsonDeserializer<RoutePredictionsModel> {
                 direction.add(gson.fromJson(element, PredictionModel::class.java))
             }
         }
-        return RoutePredictionsModel(routeTag, stopTag, routeTitle, stopTitle, direction)
+        return RoutePredictionsModel(routeTag, stopTag, routeTitle, stopTitle, dirTitleWhenNoPrediction, direction)
     }
 }

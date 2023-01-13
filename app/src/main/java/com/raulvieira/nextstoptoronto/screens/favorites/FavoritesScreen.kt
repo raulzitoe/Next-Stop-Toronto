@@ -85,6 +85,7 @@ fun StopsLazyColumnPreview() {
                 stopTag = "1234",
                 routeTitle = "41-Keele Towards somewhere",
                 stopTitle = "Keele St at that St",
+                directionTitleWhenNoPredictions = "41 - Keele some short turn",
                 directions = listOf(
                     PredictionModel(
                         title = "41-Keele Towards somewhere",
@@ -110,6 +111,7 @@ fun StopsLazyColumnPreview() {
                 stopTag = "1234",
                 routeTitle = "41-Keele Towards somewhere",
                 stopTitle = "Keele St at that St",
+                directionTitleWhenNoPredictions = "41 - Keele some short turn",
                 directions = listOf(
                     PredictionModel(
                         title = "41-Keele Towards somewhere",

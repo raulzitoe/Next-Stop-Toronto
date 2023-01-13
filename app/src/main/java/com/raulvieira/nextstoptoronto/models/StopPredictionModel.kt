@@ -11,8 +11,10 @@ data class RoutePredictionsModel(
     val stopTag: String, // Stop unique number
     val routeTitle: String, // 189-Stockyards
     val stopTitle: String, // Ex: Keele St At Glenlake Ave
+    @SerializedName("dirTitleBecauseNoPredictions")
+    val directionTitleWhenNoPredictions: String,
     @SerializedName("direction")
-    val directions: List<PredictionModel>?
+    val directions: List<PredictionModel>
 )
 
 data class PredictionModel(
