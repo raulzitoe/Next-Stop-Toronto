@@ -14,7 +14,6 @@ import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -28,7 +27,7 @@ import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 import com.raulvieira.nextstoptoronto.utils.locationFlow
 
 @OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class,
+    ExperimentalMaterial3Api::class,
     ExperimentalPermissionsApi::class
 )
 @Composable

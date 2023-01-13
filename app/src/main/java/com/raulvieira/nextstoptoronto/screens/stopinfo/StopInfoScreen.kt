@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
@@ -17,7 +16,7 @@ import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
