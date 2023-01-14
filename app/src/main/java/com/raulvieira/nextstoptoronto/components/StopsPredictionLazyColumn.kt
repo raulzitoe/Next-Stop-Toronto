@@ -1,9 +1,15 @@
 package com.raulvieira.nextstoptoronto.components
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
@@ -14,10 +20,11 @@ fun StopsPredictionLazyColumn(
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
     distanceToStop: (RoutePredictionsModel) -> String,
-    hideEmptyRoute: Boolean = true
+    hideEmptyRoute: Boolean = true,
+    isOnStopScreen: Boolean = false
 ) {
     LazyColumn {
-        items(predictions) { routePredictionItem ->
+        itemsIndexed(predictions) { index, routePredictionItem ->
             if (!hideEmptyRoute || routePredictionItem.directions.isNotEmpty()) {
                 StopPredictionCard(
                     routePredictionItem = routePredictionItem,
@@ -27,6 +34,13 @@ fun StopsPredictionLazyColumn(
                     },
                     favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
                     distanceToStop = { distanceToStop(routePredictionItem) }
+                )
+            }
+            if (isOnStopScreen && predictions.size > 1 && index == 0) {
+                Text(
+                    text = "Other lines at this stop:",
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                    fontSize = 16.sp
                 )
             }
         }

@@ -58,7 +58,7 @@ fun StopInfoScreen(
             Surface(modifier = Modifier.padding(innerPadding)) {
                 Column {
                     StopsPredictionLazyColumn(
-                        predictions = uiState.predictions.filter {
+                        predictions = uiState.predictions.sortedByDescending {
                             it.routeTag == routeTag
                         },
                         onClickFavoriteItem = { isChecked, favoriteItem ->
@@ -81,37 +81,9 @@ fun StopInfoScreen(
                             isFavorited
                         },
                         distanceToStop = { "" },
-                        hideEmptyRoute = false
+                        hideEmptyRoute = false,
+                        isOnStopScreen = true
                     )
-                    if (uiState.predictions.size > 1) {
-                        Text("Other lines at this stop: ")
-                        StopsPredictionLazyColumn(
-                            predictions = uiState.predictions.filter {
-                                it.routeTag != routeTag
-                            },
-                            onClickFavoriteItem = { isChecked, favoriteItem ->
-                                viewModel.handleFavoriteItem(
-                                    isChecked,
-                                    FavoritesModel(
-                                        id = 0,
-                                        routeTag = favoriteItem.routeTag,
-                                        stopTag = favoriteItem.stopTag,
-                                        stopTitle = favoriteItem.stopTitle
-                                    )
-                                )
-                            },
-                            favoriteButtonChecked = { prediction ->
-                                val isFavorited by viewModel.isRouteFavorited(
-                                    prediction.stopTag,
-                                    prediction.routeTag,
-                                    prediction.stopTitle
-                                ).collectAsStateWithLifecycle(initialValue = false)
-                                isFavorited
-                            },
-                            distanceToStop = { "" },
-                            hideEmptyRoute = false
-                            )
-                    }
                 }
             }
         }
