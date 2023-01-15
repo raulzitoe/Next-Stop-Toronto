@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,36 +56,48 @@ fun StopInfoScreen(
             )
         },
         content = { innerPadding ->
-            Surface(modifier = Modifier.padding(innerPadding)) {
-                Column {
-                    StopsPredictionLazyColumn(
-                        predictions = uiState.predictions.sortedByDescending {
-                            it.routeTag == routeTag
-                        },
-                        onClickFavoriteItem = { isChecked, favoriteItem ->
-                            viewModel.handleFavoriteItem(
-                                isChecked,
-                                FavoritesModel(
-                                    id = 0,
-                                    routeTag = favoriteItem.routeTag,
-                                    stopTag = favoriteItem.stopTag,
-                                    stopTitle = favoriteItem.stopTitle
+            Surface(modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()) {
+                if (uiState.predictions.isEmpty()) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    Column {
+                        StopsPredictionLazyColumn(
+                            predictions = uiState.predictions.sortedByDescending {
+                                it.routeTag == routeTag
+                            },
+                            onClickFavoriteItem = { isChecked, favoriteItem ->
+                                viewModel.handleFavoriteItem(
+                                    isChecked,
+                                    FavoritesModel(
+                                        id = 0,
+                                        routeTag = favoriteItem.routeTag,
+                                        stopTag = favoriteItem.stopTag,
+                                        stopTitle = favoriteItem.stopTitle
+                                    )
                                 )
-                            )
-                        },
-                        favoriteButtonChecked = { prediction ->
-                            val isFavorited by viewModel.isRouteFavorited(
-                                prediction.stopTag,
-                                prediction.routeTag,
-                                prediction.stopTitle
-                            ).collectAsStateWithLifecycle(initialValue = false)
-                            isFavorited
-                        },
-                        distanceToStop = { "" },
-                        hideEmptyRoute = false,
-                        isOnStopScreen = true
-                    )
+                            },
+                            favoriteButtonChecked = { prediction ->
+                                val isFavorited by viewModel.isRouteFavorited(
+                                    prediction.stopTag,
+                                    prediction.routeTag,
+                                    prediction.stopTitle
+                                ).collectAsStateWithLifecycle(initialValue = false)
+                                isFavorited
+                            },
+                            distanceToStop = { "" },
+                            hideEmptyRoute = false,
+                            isOnStopScreen = true
+                        )
+                    }
                 }
+
             }
         }
     )
@@ -150,6 +163,6 @@ fun StopInfoScreenLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = {""}
+        distanceToStop = { "" }
     )
 }

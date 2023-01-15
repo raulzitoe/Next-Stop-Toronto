@@ -1,11 +1,14 @@
 package com.raulvieira.nextstoptoronto.screens.favorites
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -49,29 +52,40 @@ fun FavoritesScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            StopsPredictionLazyColumn(
-                predictions = uiState.predictions,
-                onClickFavoriteItem = { isChecked, favoriteItem ->
-                    viewModel.handleFavoriteItem(
-                        isChecked,
-                        FavoritesModel(
-                            id = 0,
-                            routeTag = favoriteItem.routeTag,
-                            stopTag = favoriteItem.stopTag,
-                            stopTitle = favoriteItem.stopTitle
+            if (uiState.predictions.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            else {
+                StopsPredictionLazyColumn(
+                    predictions = uiState.predictions,
+                    onClickFavoriteItem = { isChecked, favoriteItem ->
+                        viewModel.handleFavoriteItem(
+                            isChecked,
+                            FavoritesModel(
+                                id = 0,
+                                routeTag = favoriteItem.routeTag,
+                                stopTag = favoriteItem.stopTag,
+                                stopTitle = favoriteItem.stopTitle
+                            )
                         )
-                    )
-                },
-                favoriteButtonChecked = { routeToCheck ->
-                    viewModel.isRouteFavorited(
-                        routeToCheck.stopTag,
-                        routeToCheck.routeTag,
-                        routeToCheck.stopTitle
-                    ).collectAsStateWithLifecycle(initialValue = false).value
-                },
-                distanceToStop = { "" },
-                hideEmptyRoute = false
-            )
+                    },
+                    favoriteButtonChecked = { routeToCheck ->
+                        viewModel.isRouteFavorited(
+                            routeToCheck.stopTag,
+                            routeToCheck.routeTag,
+                            routeToCheck.stopTitle
+                        ).collectAsStateWithLifecycle(initialValue = false).value
+                    },
+                    distanceToStop = { "" },
+                    hideEmptyRoute = false
+                )
+            }
+
         }
     }
 }

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -32,7 +33,7 @@ import com.raulvieira.nextstoptoronto.utils.locationFlow
 )
 @Composable
 fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
-    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -59,7 +60,8 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
     LaunchedEffect(key1 = Unit) {
         fusedLocationClient.locationFlow(this).collect { location ->
             if (viewModel.userLocation?.latitude != location?.latitude
-                && viewModel.userLocation?.longitude != location?.longitude) {
+                && viewModel.userLocation?.longitude != location?.longitude
+            ) {
                 location?.let {
                     viewModel.userLocationFlow.emit(it)
                 }
@@ -114,32 +116,42 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            StopsPredictionLazyColumn(
-                predictions = uiState.value.predictions.sortedBy {
-                    viewModel.calculateStopDistance(it.stopTag)
-                },
-                onClickFavoriteItem = { isChecked, favoriteItem ->
-                    viewModel.handleFavoriteItem(
-                        isChecked,
-                        FavoritesModel(
-                            id = 0,
-                            routeTag = favoriteItem.routeTag,
-                            stopTag = favoriteItem.stopTag,
-                            stopTitle = favoriteItem.stopTitle
-                        )
-                    )
-                },
-                favoriteButtonChecked = { routeToCheck ->
-                    viewModel.isRouteFavorited(
-                        routeToCheck.stopTag,
-                        routeToCheck.routeTag,
-                        routeToCheck.stopTitle
-                    ).collectAsStateWithLifecycle(initialValue = false).value
-                },
-                distanceToStop = { routePredictionItem ->
-                    viewModel.calculateStopDistance(routePredictionItem.stopTag)
+            if (uiState.predictions.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-            )
+            } else {
+                StopsPredictionLazyColumn(
+                    predictions = uiState.predictions.sortedBy {
+                        viewModel.calculateStopDistance(it.stopTag)
+                    },
+                    onClickFavoriteItem = { isChecked, favoriteItem ->
+                        viewModel.handleFavoriteItem(
+                            isChecked,
+                            FavoritesModel(
+                                id = 0,
+                                routeTag = favoriteItem.routeTag,
+                                stopTag = favoriteItem.stopTag,
+                                stopTitle = favoriteItem.stopTitle
+                            )
+                        )
+                    },
+                    favoriteButtonChecked = { routeToCheck ->
+                        viewModel.isRouteFavorited(
+                            routeToCheck.stopTag,
+                            routeToCheck.routeTag,
+                            routeToCheck.stopTitle
+                        ).collectAsStateWithLifecycle(initialValue = false).value
+                    },
+                    distanceToStop = { routePredictionItem ->
+                        viewModel.calculateStopDistance(routePredictionItem.stopTag)
+                    }
+                )
+            }
+
         }
     }
 }
