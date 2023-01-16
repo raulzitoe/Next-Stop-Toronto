@@ -1,9 +1,9 @@
 package com.raulvieira.nextstoptoronto.screens.routeinfo
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -25,7 +25,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
+import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
 import com.raulvieira.nextstoptoronto.models.StopModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -107,32 +109,50 @@ fun StopsLazyColumn(
     searchedText: TextFieldValue,
     onClickStopItem: (String) -> Unit
 ) {
-    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        items(
-            items = stops
-                .filter {
-                    it.stopId.isNotBlank()
-                }
-                .filter {
-                    val words =
-                        searchedText.text.split("\\s+".toRegex()).map { word ->
-                            word.replace("""^[,.]|[,.]$""".toRegex(), "")
-                        }
-                    var containsWord = true
-                    words.forEach { word ->
-                        containsWord = containsWord && it.title.contains(
-                            word,
-                            ignoreCase = true
-                        )
-                    }
-                    containsWord
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var showScrollButton by remember { mutableStateOf(false) }
 
-                }.sortedBy { it.title },
-        ) { routeInfo ->
-            StopInfoCard(
-                routeInfo = routeInfo,
-                onClick = { stopId -> onClickStopItem(stopId) })
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }.collect {
+            showScrollButton = true
+            delay(800)
+            showScrollButton = false
         }
+    }
+
+    Box {
+        LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            items(
+                items = stops
+                    .filter {
+                        it.stopId.isNotBlank()
+                    }
+                    .filter {
+                        val words =
+                            searchedText.text.split("\\s+".toRegex()).map { word ->
+                                word.replace("""^[,.]|[,.]$""".toRegex(), "")
+                            }
+                        var containsWord = true
+                        words.forEach { word ->
+                            containsWord = containsWord && it.title.contains(
+                                word,
+                                ignoreCase = true
+                            )
+                        }
+                        containsWord
+
+                    }.sortedBy { it.title },
+            ) { routeInfo ->
+                StopInfoCard(
+                    routeInfo = routeInfo,
+                    onClick = { stopId -> onClickStopItem(stopId) })
+            }
+        }
+        ScrollToTopButton(
+            onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+            showButton = showScrollButton
+        )
     }
 }
 

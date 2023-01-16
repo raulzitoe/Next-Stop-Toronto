@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -23,8 +24,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
+import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
 import com.raulvieira.nextstoptoronto.models.RouteListModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,30 +97,50 @@ fun RouteGrid(
     searchedText: TextFieldValue,
     onClickRoute: (String) -> Unit
 ) {
-    LazyVerticalGrid(
-        modifier = modifier,
-        columns = GridCells.Adaptive(minSize = 150.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        items(items = routes.routeList.filter {
-            val words = searchedText.text.split("\\s+".toRegex()).map { word ->
-                word.replace("""^[,.]|[,.]$""".toRegex(), "")
-            }
-            var containsWord = true
-            words.forEach { word ->
-                containsWord =
-                    containsWord && it.title.contains(word, ignoreCase = true)
-            }
-            containsWord
+    val listState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+    var showScrollButton by remember { mutableStateOf(false) }
 
-        },
-            key = { it.routeTag }
-        ) { route ->
-            RouteCard(
-                route = route,
-                onClick = { onClickRoute(route.routeTag) })
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }.collect {
+            showScrollButton = true
+            delay(800)
+            showScrollButton = false
         }
     }
+
+    Box {
+        LazyVerticalGrid(
+            modifier = modifier,
+            columns = GridCells.Adaptive(minSize = 150.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            state = listState
+        ) {
+            items(items = routes.routeList.filter {
+                val words = searchedText.text.split("\\s+".toRegex()).map { word ->
+                    word.replace("""^[,.]|[,.]$""".toRegex(), "")
+                }
+                var containsWord = true
+                words.forEach { word ->
+                    containsWord =
+                        containsWord && it.title.contains(word, ignoreCase = true)
+                }
+                containsWord
+
+            },
+                key = { it.routeTag }
+            ) { route ->
+                RouteCard(
+                    route = route,
+                    onClick = { onClickRoute(route.routeTag) })
+            }
+        }
+        ScrollToTopButton(
+            onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+            showButton = showScrollButton
+        )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

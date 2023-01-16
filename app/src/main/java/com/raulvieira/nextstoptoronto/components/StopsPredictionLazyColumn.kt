@@ -3,8 +3,16 @@ package com.raulvieira.nextstoptoronto.components
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -12,6 +20,8 @@ import androidx.compose.ui.unit.sp
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun StopsPredictionLazyColumn(
@@ -22,7 +32,19 @@ fun StopsPredictionLazyColumn(
     hideEmptyRoute: Boolean = true,
     isOnStopScreen: Boolean = false
 ) {
-    LazyColumn {
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var showScrollButton by remember { mutableStateOf(false) }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }.collect {
+            showScrollButton = true
+            delay(800)
+            showScrollButton = false
+        }
+    }
+
+    LazyColumn(state = listState) {
         itemsIndexed(predictions) { index, routePredictionItem ->
             if (!hideEmptyRoute || routePredictionItem.directions.isNotEmpty()) {
                 StopPredictionCard(
@@ -44,6 +66,10 @@ fun StopsPredictionLazyColumn(
             }
         }
     }
+    ScrollToTopButton(
+        onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
+        showButton = showScrollButton
+    )
 }
 
 @Preview
