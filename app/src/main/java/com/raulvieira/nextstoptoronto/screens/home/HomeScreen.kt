@@ -40,7 +40,7 @@ fun HomeScreen(
     var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
-    var searchVisible by remember { mutableStateOf(false) }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(searchVisible) {
@@ -85,7 +85,8 @@ fun HomeScreen(
                             .focusRequester(focusRequester),
                         searchVisible = searchVisible,
                         searchedText = searchedText,
-                        onValueChange = { searchedText = it }
+                        onValueChange = { searchedText = it },
+                        onClear = { searchedText = TextFieldValue("") }
                     )
                     RouteGrid(
                         modifier = Modifier.padding(horizontal = 5.dp),
@@ -182,7 +183,8 @@ fun AnimatedSearchFieldPreview() {
     AnimatedSearchField(
         searchVisible = true,
         searchedText = TextFieldValue("Text to Search"),
-        onValueChange = {})
+        onValueChange = {},
+        onClear = {})
 }
 
 @Preview(showBackground = true)

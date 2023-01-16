@@ -44,7 +44,7 @@ fun RouteInfoScreen(
     var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
-    var searchVisible by remember { mutableStateOf(false) }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(searchVisible) {
@@ -82,9 +82,11 @@ fun RouteInfoScreen(
         }
     )
     { innerPadding ->
-        Surface(modifier = Modifier
-            .padding(innerPadding)
-            .fillMaxSize()) {
+        Surface(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
             if (uiState.route.stopsList.isEmpty()) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -97,11 +99,12 @@ fun RouteInfoScreen(
                     AnimatedSearchField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
+                            .padding(start = 10.dp, end = 10.dp, bottom = 5.dp)
                             .focusRequester(focusRequester),
                         searchVisible = searchVisible,
                         searchedText = searchedText,
-                        onValueChange = { searchedText = it })
+                        onValueChange = { searchedText = it },
+                        onClear = { searchedText = TextFieldValue("") })
                     StopsLazyColumn(
                         modifier = Modifier.padding(horizontal = 5.dp),
                         stops = uiState.route.stopsList,
@@ -204,7 +207,8 @@ fun AnimatedSearchFieldPreview() {
     AnimatedSearchField(
         searchVisible = true,
         searchedText = TextFieldValue("Text to Search"),
-        onValueChange = {})
+        onValueChange = {},
+        onClear = {})
 }
 
 @Preview
