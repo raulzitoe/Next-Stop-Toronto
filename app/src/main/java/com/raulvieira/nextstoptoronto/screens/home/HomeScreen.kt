@@ -26,7 +26,6 @@ import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
 import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
-import com.raulvieira.nextstoptoronto.models.RouteListModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -113,9 +112,11 @@ fun RouteGrid(
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }.collect {
-            showScrollButton = true
-            delay(800)
-            showScrollButton = false
+            if (it > 0) {
+                showScrollButton = true
+                delay(800)
+                showScrollButton = false
+            }
         }
     }
 

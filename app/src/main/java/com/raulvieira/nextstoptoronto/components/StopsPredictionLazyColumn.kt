@@ -38,9 +38,12 @@ fun StopsPredictionLazyColumn(
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }.collect {
-            showScrollButton = true
-            delay(800)
-            showScrollButton = false
+            if(it> 0){
+                showScrollButton = true
+                delay(800)
+                showScrollButton = false
+            }
+
         }
     }
 
