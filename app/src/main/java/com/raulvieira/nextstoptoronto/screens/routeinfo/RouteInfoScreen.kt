@@ -79,9 +79,20 @@ fun RouteInfoScreen(
                     }
                 }
             )
-        },
-        content = { innerPadding ->
-            Surface(modifier = Modifier.padding(innerPadding)) {
+        }
+    )
+    { innerPadding ->
+        Surface(modifier = Modifier
+            .padding(innerPadding)
+            .fillMaxSize()) {
+            if (uiState.route.stopsList.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
                 Column {
                     AnimatedSearchField(
                         modifier = Modifier
@@ -99,7 +110,7 @@ fun RouteInfoScreen(
                 }
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -122,7 +133,11 @@ fun StopsLazyColumn(
     }
 
     Box {
-        LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            state = listState
+        ) {
             items(
                 items = stops
                     .filter {
@@ -165,7 +180,9 @@ fun StopInfoCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .wrapContentHeight().fillMaxWidth().defaultMinSize(minHeight = 48.dp)
+                .wrapContentHeight()
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 48.dp)
         ) {
             Text(
                 text = routeInfo.title, textAlign = TextAlign.Center,

@@ -37,7 +37,7 @@ fun HomeScreen(
     onNavigate: (String) -> Unit
 
 ) {
-    val routes by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -70,22 +70,32 @@ fun HomeScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            Column {
-                AnimatedSearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp)
-                        .focusRequester(focusRequester),
-                    searchVisible = searchVisible,
-                    searchedText = searchedText,
-                    onValueChange = { searchedText = it }
-                )
-                RouteGrid(
-                    modifier = Modifier.padding(horizontal = 5.dp),
-                    routes = routes,
-                    searchedText = searchedText,
-                    onClickRoute = { onNavigate(it) })
+            if (uiState.routeList.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column {
+                    AnimatedSearchField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp)
+                            .focusRequester(focusRequester),
+                        searchVisible = searchVisible,
+                        searchedText = searchedText,
+                        onValueChange = { searchedText = it }
+                    )
+                    RouteGrid(
+                        modifier = Modifier.padding(horizontal = 5.dp),
+                        routeList = uiState.routeList,
+                        searchedText = searchedText,
+                        onClickRoute = { onNavigate(it) })
+                }
             }
+
         }
     }
 }
@@ -93,7 +103,7 @@ fun HomeScreen(
 @Composable
 fun RouteGrid(
     modifier: Modifier = Modifier,
-    routes: RouteListModel,
+    routeList: List<RouteLineModel>,
     searchedText: TextFieldValue,
     onClickRoute: (String) -> Unit
 ) {
@@ -116,7 +126,7 @@ fun RouteGrid(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             state = listState
         ) {
-            items(items = routes.routeList.filter {
+            items(items = routeList.filter {
                 val words = searchedText.text.split("\\s+".toRegex()).map { word ->
                     word.replace("""^[,.]|[,.]$""".toRegex(), "")
                 }
@@ -184,13 +194,12 @@ fun RouteCardPreview() {
 @Composable
 fun RouteGridPreview() {
     RouteGrid(
-        routes = RouteListModel(
-            listOf(
-                RouteLineModel(routeTag = "41", title = "41-Keele"),
-                RouteLineModel(routeTag = "42", title = "42-Keele"),
-                RouteLineModel(routeTag = "43", title = "43-Keele"),
-                RouteLineModel(routeTag = "44", title = "44-Keele")
-            )
+        routeList =
+        listOf(
+            RouteLineModel(routeTag = "41", title = "41-Keele"),
+            RouteLineModel(routeTag = "42", title = "42-Keele"),
+            RouteLineModel(routeTag = "43", title = "43-Keele"),
+            RouteLineModel(routeTag = "44", title = "44-Keele")
         ),
         searchedText = TextFieldValue(""),
         onClickRoute = {})
