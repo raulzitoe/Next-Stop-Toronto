@@ -1,5 +1,6 @@
 package com.raulvieira.nextstoptoronto.components
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,7 +63,7 @@ fun StopPredictionCard(
                             .padding(start = 10.dp, end = 5.dp),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
-                        color = Color.White,
+                        color = if(isSystemInDarkTheme()) LocalContentColor.current else Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -71,7 +72,7 @@ fun StopPredictionCard(
                             if (distanceToStop().isNotEmpty()) {
                                 Surface(
                                     modifier = Modifier.wrapContentSize(),
-                                    color = Color.White,
+                                    color = if(isSystemInDarkTheme()) Color.DarkGray else MaterialTheme.colorScheme.background,
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
@@ -79,7 +80,8 @@ fun StopPredictionCard(
                                         modifier = Modifier.padding(5.dp),
                                         fontWeight = FontWeight.ExtraBold,
                                         textAlign = TextAlign.Center,
-                                        fontSize = 16.sp
+                                        fontSize = 16.sp,
+                                        color = LocalContentColor.current
                                     )
                                 }
                             }
