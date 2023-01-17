@@ -30,6 +30,9 @@ interface RoomDao {
     @Query("SELECT * FROM favorites_table")
     fun getFavorites(): Flow<List<FavoritesModel>>
 
+    @Query("SELECT NOT EXISTS(SELECT * FROM favorites_table)")
+    fun isFavoritesEmpty():Flow<Boolean>
+
     @Upsert
     suspend fun insertStopToDatabase(stop: StopModel)
 

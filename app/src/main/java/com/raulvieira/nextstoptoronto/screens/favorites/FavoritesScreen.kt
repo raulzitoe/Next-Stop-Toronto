@@ -28,6 +28,7 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isFavoriteEmpty by viewModel.isFavoriteEmpty.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -52,7 +53,15 @@ fun FavoritesScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (uiState.predictions.isEmpty()) {
+            if(isFavoriteEmpty){
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("There are no routes on your favorites")
+                }
+            }
+            else if (uiState.predictions.isEmpty()) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center

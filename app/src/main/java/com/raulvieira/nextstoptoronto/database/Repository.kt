@@ -74,6 +74,8 @@ class Repository(private val apiService: RetrofitInterface, private val database
 
     fun getFavorites() = database.getFavorites()
 
+    fun isFavoritesEmpty():Flow<Boolean> = database.isFavoritesEmpty()
+
     fun getStopsFromDatabase(): Flow<List<StopModel>> {
         return database.getStopsFromDatabase()
     }

@@ -20,6 +20,8 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     private val _uiState: MutableStateFlow<StopPredictionModel> =
         MutableStateFlow(StopPredictionModel(listOf()))
     val uiState: StateFlow<StopPredictionModel> = _uiState
+    private val _isFavoriteEmpty: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val isFavoriteEmpty: StateFlow<Boolean> = _isFavoriteEmpty
     private var job = Job()
         get() {
             if (field.isCancelled) field = Job()
@@ -39,13 +41,17 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
         return repository.getFavorites().flatMapLatest { fav ->
-            if (fav.isEmpty()) return@flatMapLatest flowOf(StopPredictionModel(listOf()))
             val stopsDataFormatted = fav.map { it.routeTag + "|" + it.stopTag }
             repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
         }
     }
 
     private fun subscribeToFavorites() {
+        viewModelScope.launch {
+            repository.isFavoritesEmpty().collect { value ->
+                _isFavoriteEmpty.update { value }
+            }
+        }
         viewModelScope.launch(job) {
             stopPredictionStream(viewModelScope).collect { data ->
                 data?.let { dataNotNull ->
