@@ -31,21 +31,15 @@ class Repository(private val apiService: RetrofitInterface, private val database
         }
     }
 
-    suspend fun fetchStopsListFromApi(): List<StopModel> {
+    suspend fun fetchStopsListFromApi(onPercentageCompletion: (Float) -> Unit): List<StopModel> {
         val stopsList: MutableList<StopModel> = listOf<StopModel>().toMutableList()
-        val routes = apiService.requestRouteList()
-//        var count = 0 //TODO Remove count, it is used just to limit api usage for testing
-        routes.body()?.routeList?.forEach {
-//            if(count==3) return@forEach
-            if (it.routeTag == "41") {
-                val data = apiService.requestRouteConfig(routeTag = it.routeTag).body()
-                if (data != null) {
-                    stopsList.addAll(data.route.stopsList)
-                    return@forEach
-                }
-            }
-//            count++
-//            delay(500)
+        val routes = apiService.requestRouteList().body()
+        val routesSize = (routes?.routeList?.size ?: 0).toFloat()
+        routes?.routeList?.forEachIndexed { index, route ->
+            onPercentageCompletion((index + 1) / routesSize)
+            val data = apiService.requestRouteConfig(routeTag = route.routeTag).body()
+            data?.let { stopsList.addAll(it.route.stopsList) }
+            delay(100)
         }
         stopsList.distinctBy { it.stopTag }
         return stopsList
@@ -74,7 +68,7 @@ class Repository(private val apiService: RetrofitInterface, private val database
 
     fun getFavorites() = database.getFavorites()
 
-    fun isFavoritesEmpty():Flow<Boolean> = database.isFavoritesEmpty()
+    fun isFavoritesEmpty(): Flow<Boolean> = database.isFavoritesEmpty()
 
     fun getStopsFromDatabase(): Flow<List<StopModel>> {
         return database.getStopsFromDatabase()

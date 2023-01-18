@@ -42,6 +42,8 @@ fun HomeScreen(
     }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
+    val showDialog by viewModel.showDialog
+    val updateProgress by viewModel.updatePercentage
 
     LaunchedEffect(searchVisible) {
         if (searchVisible) {
@@ -69,6 +71,23 @@ fun HomeScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = {},
+                    confirmButton = {},
+                    title = { Text("Updating Stops") },
+                    text = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Text(modifier = Modifier.padding(vertical = 5.dp), text = (updateProgress * 100).toInt().toString() + "%")
+                            Text(modifier = Modifier.padding(vertical = 5.dp),
+                                text = "Downloading updated stop locations from the TTC to show on your map, " +
+                                        "this happens every few months"
+                            )
+                        }
+                    }
+                )
+            }
             if (uiState.routeList.isEmpty()) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

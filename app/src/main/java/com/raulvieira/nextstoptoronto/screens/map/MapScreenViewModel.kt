@@ -24,7 +24,6 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository)
 
     init {
         getStopsFromDatabase()
-        fetchStopsListFromApi()
     }
 
     fun getStopPrediction(stopId: String) {
@@ -49,42 +48,6 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository)
             repository.getStopsFromDatabase().collect { stopsData ->
                 _stopList.update { stopsData }
             }
-        }
-    }
-
-    private fun fetchStopsListFromApi(){
-        viewModelScope.launch {
-            val lastUpdated = repository.getLastUpdatedDate()
-            val currentDate = Calendar.getInstance().time
-            if (lastUpdated != null) {
-                val dateToCheck = Calendar.getInstance()
-                dateToCheck.time = lastUpdated
-                dateToCheck.add(Calendar.DATE, 60)
-                // Fetch data if 60 days since last update
-                if(dateToCheck.time < currentDate) {
-                    Log.i("fetch_stops", "Fetching stops because local data is old")
-                    setStopsDatabase(repository.fetchStopsListFromApi())
-                    repository.setLastUpdatedDate(Calendar.getInstance().time)
-                }
-                else {
-                    Log.i("fetch_stops", "Stop data is not old, not fetching")
-                }
-            }
-            else{
-                Log.i("fetch_stops", "Fetching stops because local data is null")
-                setStopsDatabase(repository.fetchStopsListFromApi())
-                repository.setLastUpdatedDate(Calendar.getInstance().time)
-            }
-
-
-        }
-    }
-
-    private fun setStopsDatabase(stopsList: List<StopModel>) {
-        viewModelScope.launch {
-            repository.setStopsDatabase(stopsList)
-            val currentTime: Date = Calendar.getInstance().time
-            repository.setLastUpdatedDate(currentTime)
         }
     }
 }
