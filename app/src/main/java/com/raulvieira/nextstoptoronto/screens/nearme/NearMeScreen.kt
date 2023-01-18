@@ -1,8 +1,12 @@
 package com.raulvieira.nextstoptoronto.screens.nearme
 
 import android.Manifest
-import android.content.pm.PackageManager
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,12 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.app.ActivityCompat
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.*
 import com.raulvieira.nextstoptoronto.R
@@ -57,42 +62,24 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         )
     }
 
-    LaunchedEffect(key1 = Unit) {
-        fusedLocationClient.locationFlow(this).collect { location ->
-            if (viewModel.userLocation?.latitude != location?.latitude
-                && viewModel.userLocation?.longitude != location?.longitude
-            ) {
-                location?.let {
-                    viewModel.userLocationFlow.emit(it)
+    LaunchedEffect(key1 = Unit, key2 = permissionsState.allPermissionsGranted) {
+        if (permissionsState.allPermissionsGranted) {
+            fusedLocationClient.locationFlow(this).collect { location ->
+                if (viewModel.userLocation?.latitude != location?.latitude
+                    && viewModel.userLocation?.longitude != location?.longitude
+                ) {
+                    location?.let {
+                        viewModel.userLocationFlow.emit(it)
+                    }
                 }
             }
-        }
-    }
-
-    LaunchedEffect(key1 = Unit) {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return@LaunchedEffect
         }
     }
 
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
-                permissionsState.permissions.first().launchPermissionRequest()
+                permissionsState.launchMultiplePermissionRequest()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -116,7 +103,16 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (uiState.predictions.isEmpty()) {
+            if (!permissionsState.allPermissionsGranted) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    PreciseLocationPermissionBox(permissionsState = permissionsState)
+                }
+            } else if (uiState.predictions.isEmpty()) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -152,6 +148,67 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 )
             }
 
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun PreciseLocationPermissionBox(
+    modifier: Modifier = Modifier,
+    permissionsState: MultiplePermissionsState
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+    ) {
+        //
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val allPermissionsRevoked =
+                permissionsState.permissions.size ==
+                        permissionsState.revokedPermissions.size
+
+            val textToShow = if (!allPermissionsRevoked && permissionsState.shouldShowRationale) {
+                // If not all the permissions are revoked, it's because the user accepted the COARSE
+                // location permission, but not the FINE one.
+                "App has access your approximate location but this feature requires precise location permission"
+            } else if (permissionsState.shouldShowRationale) {
+                // Both location permissions have been denied
+                "This feature requires precise location permission."
+            } else {
+                // First time the user sees this feature or the user doesn't want to be asked again
+                "This feature requires precise location permission. Open the configuration and change the location permission to precise"
+            }
+
+            val buttonText = if (!allPermissionsRevoked) {
+                "Allow precise location"
+            } else {
+                "Request permissions"
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Outlined.Warning, contentDescription = "Localized description")
+                Text(text = textToShow)
+            }
+            if(!permissionsState.shouldShowRationale){
+                val context = LocalContext.current
+                val uri = Uri.fromParts("package", context.packageName, null)
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                Button(onClick = {
+                    intent.data = uri
+                    context.startActivity(intent)
+                }) {
+                    Text("Configuration")
+                }
+            }
+            else {
+                Button(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
+                    Text(buttonText)
+                }
+            }
         }
     }
 }

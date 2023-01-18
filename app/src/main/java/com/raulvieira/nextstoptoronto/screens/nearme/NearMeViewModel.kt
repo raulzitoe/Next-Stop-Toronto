@@ -47,6 +47,13 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
         subscribeToStopStream()
     }
 
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        if(!job.isActive){
+            subscribeToStopStream()
+        }
+    }
+
     fun calculateStopDistance(stopTag: String): String {
         val stop = stops.find { it.stopTag == stopTag }
         val distance = FloatArray(1)
@@ -86,7 +93,9 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
                         }
                     }
                     stopsNearby.forEach { stop ->
-                        flowList.add(nearMePredictionStream(viewModelScope, stop.stopId))
+                        if(stop.stopId.isNotEmpty()){
+                            flowList.add(nearMePredictionStream(viewModelScope, stop.stopId))
+                        }
                     }
                     combine(*flowList.toTypedArray()) { combinedData ->
                         val predictions: MutableList<RoutePredictionsModel> = mutableListOf()
