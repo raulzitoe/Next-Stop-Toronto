@@ -39,7 +39,6 @@ class Repository(private val apiService: RetrofitInterface, private val database
             onPercentageCompletion((index + 1) / routesSize)
             val data = apiService.requestRouteConfig(routeTag = route.routeTag).body()
             data?.let { stopsList.addAll(it.route.stopsList) }
-            delay(100)
         }
         stopsList.distinctBy { it.stopTag }
         return stopsList
