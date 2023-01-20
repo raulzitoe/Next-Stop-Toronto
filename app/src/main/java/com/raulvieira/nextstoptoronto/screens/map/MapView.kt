@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.view.MotionEvent
@@ -38,6 +39,7 @@ const val START_ZOOM = 18.0
 const val STARTING_LATITUDE = 43.656339
 const val STARTING_LONGITUDE = -79.460403
 
+@SuppressLint("ClickableViewAccessibility")
 @Composable
 fun MapView(
     modifier: Modifier = Modifier,
@@ -51,7 +53,7 @@ fun MapView(
     val coroutineScope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    if (stopsList.isNotEmpty()) {
+    DisposableEffect(key1 = lifecycle, key2 = stopsList) {
         val lifecycleObserver =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_RESUME) {
@@ -67,118 +69,119 @@ fun MapView(
                     mapViewState.overlays[2] = stopMarkersOverlay
                 }
             }
-        DisposableEffect(lifecycle) {
-            lifecycle.addObserver(lifecycleObserver)
-            onDispose {
-                lifecycle.removeObserver(lifecycleObserver)
-            }
+
+        lifecycle.addObserver(lifecycleObserver)
+        onDispose {
+            lifecycle.removeObserver(lifecycleObserver)
         }
     }
 
     AndroidView(
-        factory = { mapViewState },
-        modifier = modifier
-    ) { mapView ->
-        with(mapView) {
-            // Clear overlays to avoid duplicating
-            overlays.clear()
-            // This fixes mapview overflowing parent layout
-            clipToOutline = true
+        factory = {
+            with(mapViewState) {
+                // This fixes mapview overflowing parent layout
+                clipToOutline = true
+                controller.setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
+                controller.setZoom(START_ZOOM)
+                setMultiTouchControls(true)
+                zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
+            }
+            val mapNorthCompassOverlay = object : CompassOverlay(context, mapViewState) {
+                override fun draw(c: Canvas?, pProjection: Projection?) {
+                    drawCompass(c, -mapViewState.mapOrientation, pProjection?.screenRect)
+                }
 
-            controller.setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
-            controller.setZoom(START_ZOOM)
-            setMultiTouchControls(true)
-            zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
-        }
+                override fun onSingleTapConfirmed(e: MotionEvent?, mapView: MapView?): Boolean {
+                    if (e?.actionMasked == MotionEvent.ACTION_DOWN) {
+                        if (mapView == null) return false
+                        val mapViewPosition = IntArray(2)
+                        mapView.getLocationOnScreen(mapViewPosition)
+                        val frameLeft =
+                            (ceil((35.0f * mScale - mCompassRoseBitmap.width / 2) + mapViewPosition[0]).toInt())
+                        val frameTop =
+                            (ceil((35.0f * mScale - mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
+                        val frameRight =
+                            (ceil((35.0f * mScale + mCompassRoseBitmap.width / 2 + mapViewPosition[0])).toInt())
+                        val frameBottom =
+                            (ceil((35.0f * mScale + mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
 
-
-        val mapNorthCompassOverlay = object : CompassOverlay(context, mapView) {
-            override fun draw(c: Canvas?, pProjection: Projection?) {
-                drawCompass(c, -mapView.mapOrientation, pProjection?.screenRect)
+                        if (e.rawX > frameLeft && e.rawX < frameRight && e.rawY > frameTop && e.rawY < frameBottom) {
+                            mapView.controller.animateTo(
+                                mapView.mapCenter, mapView.zoomLevelDouble,
+                                1000L, 0f
+                            )
+                            return true
+                        }
+                    }
+                    return false
+                }
             }
 
-            override fun onSingleTapConfirmed(e: MotionEvent?, mapView: MapView?): Boolean {
-                if (e?.actionMasked == MotionEvent.ACTION_DOWN) {
-                    if (mapView == null) return false
-                    val mapViewPosition = IntArray(2)
-                    mapView.getLocationOnScreen(mapViewPosition)
-                    val frameLeft =
-                        (ceil((35.0f * mScale - mCompassRoseBitmap.width / 2) + mapViewPosition[0]).toInt())
-                    val frameTop =
-                        (ceil((35.0f * mScale - mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
-                    val frameRight =
-                        (ceil((35.0f * mScale + mCompassRoseBitmap.width / 2 + mapViewPosition[0])).toInt())
-                    val frameBottom =
-                        (ceil((35.0f * mScale + mCompassRoseBitmap.height / 2 + mapViewPosition[1])).toInt())
+            val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState)
 
-                    if (e.rawX > frameLeft && e.rawX < frameRight && e.rawY > frameTop && e.rawY < frameBottom) {
-                        mapView.controller.animateTo(
-                            mapView.mapCenter, mapView.zoomLevelDouble,
-                            1000L, 0f
-                        )
-                        return true
+            // Override to improve map rotation smoothness - decreased deltaTime
+            var timeLastSet = 0L
+            val deltaTime = 10L
+            var currentAngle = 0f
+            val rotationOverlay = object : RotationGestureOverlay(mapViewState) {
+                override fun onRotate(deltaAngle: Float) {
+                    currentAngle += deltaAngle
+                    if (System.currentTimeMillis() - deltaTime > timeLastSet) {
+                        timeLastSet = System.currentTimeMillis()
+                        mapViewState.mapOrientation = mapViewState.mapOrientation + currentAngle
                     }
                 }
-                return false
             }
-        }
 
-        val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
-
-        // Override to improve map rotation smoothness - decreased deltaTime
-        var timeLastSet = 0L
-        val deltaTime = 10L
-        var currentAngle = 0f
-        val rotationOverlay = object : RotationGestureOverlay(mapView) {
-            override fun onRotate(deltaAngle: Float) {
-                currentAngle += deltaAngle
-                if (System.currentTimeMillis() - deltaTime > timeLastSet) {
-                    timeLastSet = System.currentTimeMillis()
-                    mapView.mapOrientation = mapView.mapOrientation + currentAngle
+            val mapEventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+                override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                    InfoWindow.closeAllInfoWindowsOn(mapViewState)
+                    return true
                 }
-            }
-        }
 
-        val mapEventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
-            override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
-                InfoWindow.closeAllInfoWindowsOn(mapView)
-                return true
-            }
+                override fun longPressHelper(p: GeoPoint?): Boolean {
+                    return false
+                }
+            })
 
-            override fun longPressHelper(p: GeoPoint?): Boolean {
-                return false
-            }
-        })
+            val overlays =
+                listOf(
+                    rotationOverlay,
+                    RadiusMarkerClusterer(context),
+                    locationOverlay,
+                    mapNorthCompassOverlay
+                )
+            mapViewState.overlays.addAll(overlays)
 
-        val overlays =
-            listOf(
-                rotationOverlay,
-                RadiusMarkerClusterer(context),
-                locationOverlay,
-                mapNorthCompassOverlay
-            )
-        mapView.overlays.addAll(overlays)
 
-        mapView.setOnTouchListener { view, motionEvent ->
-            view.performClick()
+
+            // Events Overlays needs to be first to listen to events
+            mapViewState.overlays.add(0, mapEventsOverlay)
+
+
+
+            mapViewState
+        },
+        modifier = modifier
+    ) { mapView ->
+
+        mapViewState.setOnTouchListener { view, motionEvent ->
             if (motionEvent.actionMasked == MotionEvent.ACTION_UP) {
                 val stops = filteredMarkersOverlay(
                     context,
                     stopsList,
-                    mapView,
+                    (view as MapView),
                     onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
                     stopState,
                     coroutineScope,
-                    boundingBox = mapView.boundingBox
+                    boundingBox = view.boundingBox
                 )
-                (view as MapView).overlays[2] = stops
+                view.overlays[2] = stops
                 view.invalidate()
             }
-            false
+            view.performClick()
         }
 
-        // Events Overlays needs to be first to listen to events
-        mapView.overlays.add(0, mapEventsOverlay)
         onLoad?.invoke(mapView)
     }
 }
@@ -225,7 +228,7 @@ fun filteredMarkersOverlay(
                     var textString: String = stop.title
                     if (it.predictions.isNotEmpty()) {
                         it.predictions.forEach { route ->
-                            if (!route.directions.isNullOrEmpty()) {
+                            if (route.directions.isNotEmpty()) {
                                 val routeDirection =
                                     route.directions[0].title.substringBefore(" ")
                                 textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
