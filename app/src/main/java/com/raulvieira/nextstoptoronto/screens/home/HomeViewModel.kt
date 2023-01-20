@@ -54,8 +54,8 @@ class HomeViewModel @Inject constructor(private val repository: Repository) : Vi
                 if (lastUpdated != null) {
                     val dateToCheck = Calendar.getInstance()
                     dateToCheck.time = lastUpdated
-                    dateToCheck.add(Calendar.DATE, 60)
-                    // Fetch data if 60 days since last update
+                    dateToCheck.add(Calendar.DATE, 90)
+                    // Fetch data if 90 days since last update
                     if (dateToCheck.time < currentDate) {
                         Log.i("fetch_stops", "Fetching stops because local data is old")
                         continuation.resume(true, onCancellation = null)
@@ -64,14 +64,22 @@ class HomeViewModel @Inject constructor(private val repository: Repository) : Vi
                         continuation.resume(false, onCancellation = null)
                     }
                 } else {
-                    Log.i("fetch_stops", "Fetching stops because local data is null")
-                    continuation.resume(true, onCancellation = null)
+                    Log.i(
+                        "fetch_stops",
+                        "Last update data is null, first time using app," +
+                                " using local pre-populated data for now"
+                    )
+                    repository.setLastUpdatedDate(Calendar.getInstance().time)
+                    continuation.resume(false, onCancellation = null)
                 }
             }
         }
     }
 
-    private fun updateStopsList(onPercentageCompletion: (Float) -> Unit, isUpdating: (Boolean) -> Unit) {
+    private fun updateStopsList(
+        onPercentageCompletion: (Float) -> Unit,
+        isUpdating: (Boolean) -> Unit
+    ) {
         viewModelScope.launch {
             if (shouldUpdateStopsListDatabase()) {
                 isUpdating(true)

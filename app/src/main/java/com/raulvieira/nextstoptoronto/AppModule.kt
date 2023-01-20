@@ -77,7 +77,10 @@ object AppModule {
         app,
         AppDatabase::class.java,
         "app_database"
-    ).fallbackToDestructiveMigration().build()
+    )
+        .createFromAsset("database_prepopulate.db")
+        .fallbackToDestructiveMigration()
+        .build()
 
     @Singleton
     @Provides
