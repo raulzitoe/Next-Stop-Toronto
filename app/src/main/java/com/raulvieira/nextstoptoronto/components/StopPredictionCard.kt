@@ -63,7 +63,7 @@ fun StopPredictionCard(
                             .padding(start = 10.dp, end = 5.dp),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
-                        color = if(isSystemInDarkTheme()) LocalContentColor.current else Color.White,
+                        color = if (isSystemInDarkTheme()) LocalContentColor.current else Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -72,7 +72,7 @@ fun StopPredictionCard(
                             if (distanceToStop().isNotEmpty()) {
                                 Surface(
                                     modifier = Modifier.wrapContentSize(),
-                                    color = if(isSystemInDarkTheme()) Color.DarkGray else MaterialTheme.colorScheme.background,
+                                    color = if (isSystemInDarkTheme()) Color.DarkGray else MaterialTheme.colorScheme.background,
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
@@ -140,7 +140,11 @@ fun StopPredictionCard(
                             contentDescription = "Localized description"
                         )
                         Text(text = "#" + stopPrediction.vehicle + " - ")
-                        Text(text = "In %02d:%02d".format(minutes, seconds))
+                        if (predictionSeconds >= 0) {
+                            Text(text = "In %02d:%02d".format(minutes, seconds))
+                        } else {
+                            Text(text = "Now")
+                        }
                     }
                 }
             }
@@ -158,7 +162,6 @@ fun StopPredictionCard(
                 }
             }
         }
-
     }
 }
 
