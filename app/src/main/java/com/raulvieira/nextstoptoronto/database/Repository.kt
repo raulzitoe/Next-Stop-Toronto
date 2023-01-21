@@ -25,7 +25,9 @@ class Repository(private val apiService: RetrofitInterface, private val database
     ): Flow<StopPredictionModel?> {
         return flow {
             while (scope.isActive) {
-                emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
+                if(stops.isNotEmpty()){
+                    emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
+                }
                 delay(10000)
             }
         }
