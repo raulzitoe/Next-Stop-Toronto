@@ -1,5 +1,6 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +28,7 @@ import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
 import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
+import isInternetOn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,18 +40,14 @@ fun HomeScreen(
 
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(""))
-    }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
-    val showDialog by viewModel.showDialog
+    val showUpdateDialog by viewModel.showUpdateDialog
     val updateProgress by viewModel.updatePercentage
+    val scope = rememberCoroutineScope()
+    val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
 
-    LaunchedEffect(searchVisible) {
-        if (searchVisible) {
-            focusRequester.requestFocus()
-        }
+    LaunchedEffect(key1 = Unit, key2 = isInternetOn) {
+        Log.e("INTERNET_CHANGED", "NEW VALUE: $isInternetOn")
     }
 
     Scaffold(
@@ -71,56 +70,106 @@ fun HomeScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            if (showDialog) {
-                AlertDialog(
-                    onDismissRequest = {},
-                    confirmButton = {},
-                    title = { Text("Updating Stops") },
-                    text = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Text(modifier = Modifier.padding(vertical = 5.dp), text = (updateProgress * 100).toInt().toString() + "%")
-                            Text(modifier = Modifier.padding(vertical = 5.dp),
-                                text = "Downloading updated stop locations from the TTC to show on your map, " +
-                                        "this happens every few months"
-                            )
-                        }
-                    }
-                )
-            }
-            if (uiState.routeList.isEmpty()) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                Column {
-                    AnimatedSearchField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
-                            .focusRequester(focusRequester),
+            when (val state = uiState) {
+                is HomeScreenState.Loading -> HomeScreenLoading()
+                is HomeScreenState.Success -> {
+                    val routeList = state.data.routeList
+                    HomeScreenSuccess(
+                        routeList = routeList,
                         searchVisible = searchVisible,
-                        searchedText = searchedText,
-                        onValueChange = { searchedText = it },
-                        onClear = { searchedText = TextFieldValue("") }
+                        onNavigate = { onNavigate(it) },
+                        showUpdateDialog = showUpdateDialog,
+                        updateProgress = updateProgress
                     )
-                    RouteGrid(
-                        modifier = Modifier.padding(horizontal = 5.dp),
-                        routeList = uiState.routeList,
-                        searchedText = searchedText,
-                        onClickRoute = { onNavigate(it) })
                 }
+                is HomeScreenState.Error -> HomeScreenError()
             }
-
         }
     }
 }
 
 @Composable
-fun RouteGrid(
+private fun HomeScreenSuccess(
+    routeList: List<RouteLineModel>,
+    searchVisible: Boolean,
+    onNavigate: (String) -> Unit,
+    showUpdateDialog: Boolean,
+    updateProgress: Float
+) {
+    val focusRequester = remember { FocusRequester() }
+    var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    if (showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            title = { Text("Updating Stops") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Text(
+                        modifier = Modifier.padding(vertical = 5.dp),
+                        text = (updateProgress * 100).toInt().toString() + "%"
+                    )
+                    Text(
+                        modifier = Modifier.padding(vertical = 5.dp),
+                        text = "Downloading updated stop locations from the TTC to show on your map, " +
+                                "this happens every few months"
+                    )
+                }
+            }
+        )
+    }
+
+    Column {
+        AnimatedSearchField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 5.dp)
+                .focusRequester(focusRequester),
+            searchVisible = searchVisible,
+            searchedText = searchedText,
+            onValueChange = { searchedText = it },
+            onClear = { searchedText = TextFieldValue("") }
+        )
+        RouteGrid(
+            modifier = Modifier.padding(horizontal = 5.dp),
+            routeList = routeList,
+            searchedText = searchedText,
+            onClickRoute = { onNavigate(it) })
+    }
+}
+
+@Composable
+private fun HomeScreenLoading() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun HomeScreenError() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "ERROR")
+    }
+}
+
+@Composable
+private fun RouteGrid(
     modifier: Modifier = Modifier,
     routeList: List<RouteLineModel>,
     searchedText: TextFieldValue,
@@ -176,7 +225,7 @@ fun RouteGrid(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteCard(modifier: Modifier = Modifier, route: RouteLineModel, onClick: () -> Unit) {
+private fun RouteCard(modifier: Modifier = Modifier, route: RouteLineModel, onClick: () -> Unit) {
     Card(modifier = modifier.wrapContentSize(), onClick = onClick) {
         Box(
             modifier = Modifier
@@ -196,33 +245,33 @@ fun RouteCard(modifier: Modifier = Modifier, route: RouteLineModel, onClick: () 
     }
 }
 
-@Preview
-@Composable
-fun AnimatedSearchFieldPreview() {
-    AnimatedSearchField(
-        searchVisible = true,
-        searchedText = TextFieldValue("Text to Search"),
-        onValueChange = {},
-        onClear = {})
-}
 
-@Preview(showBackground = true)
-@Composable
-fun RouteCardPreview() {
-    RouteCard(route = RouteLineModel("41", "41 - Keele"), onClick = {})
-}
 
-@Preview
+@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun RouteGridPreview() {
-    RouteGrid(
-        routeList =
-        listOf(
+private fun HomeScreenSuccessPreview() {
+    HomeScreenSuccess(
+        routeList = listOf(
             RouteLineModel(routeTag = "41", title = "41-Keele"),
             RouteLineModel(routeTag = "42", title = "42-Keele"),
             RouteLineModel(routeTag = "43", title = "43-Keele"),
             RouteLineModel(routeTag = "44", title = "44-Keele")
         ),
-        searchedText = TextFieldValue(""),
-        onClickRoute = {})
+        searchVisible =  true,
+        onNavigate = {},
+        showUpdateDialog = false,
+        updateProgress = 0.3f
+    )
+}
+
+@Preview(showSystemUi = true, showBackground = true)
+@Composable
+private fun HomeScreenLoadingPreview() {
+    HomeScreenLoading()
+}
+
+@Preview(showSystemUi = true, showBackground = true)
+@Composable
+private fun HomeScreenErrorPreview() {
+    HomeScreenError()
 }

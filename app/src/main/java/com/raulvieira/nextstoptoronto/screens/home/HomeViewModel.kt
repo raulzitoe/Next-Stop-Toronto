@@ -1,32 +1,33 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.database.Repository
-import com.raulvieira.nextstoptoronto.models.RouteListModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import isInternetOn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.lang.Exception
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
+class HomeViewModel @Inject constructor(private val repository: Repository, application: Application) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<RouteListModel> = MutableStateFlow(
-        RouteListModel(
-            emptyList()
-        )
+    private val _uiState: MutableStateFlow<HomeScreenState> = MutableStateFlow(
+        HomeScreenState.Loading
     )
-    val uiState: StateFlow<RouteListModel> = _uiState
+    val uiState: StateFlow<HomeScreenState> = _uiState
     var updatePercentage = mutableStateOf(0.0f)
-    var showDialog = mutableStateOf(false)
+    var showUpdateDialog = mutableStateOf(false)
+    var internet = isInternetOn(application, viewModelScope)
 
     init {
         getRouteList()
@@ -34,13 +35,22 @@ class HomeViewModel @Inject constructor(private val repository: Repository) : Vi
             onPercentageCompletion = { percentage ->
                 updatePercentage.value = percentage
             },
-            isUpdating = { isUpdating -> showDialog.value = isUpdating })
+            isUpdating = { isUpdating -> showUpdateDialog.value = isUpdating })
+        viewModelScope.launch {
+            internet.collect{
+                Log.e("VIEWMODEL", "INTERNET: $it" )
+            }
+        }
     }
 
     private fun getRouteList() {
         viewModelScope.launch {
-            repository.getRouteList().body()?.let { routes ->
-                _uiState.update { routes }
+            try{
+                repository.getRouteList().body()?.let { routes ->
+                    _uiState.update { HomeScreenState.Success(data = routes) }
+                }
+            } catch (e: Exception) {
+                Log.e("EXCEPTION", e.message.toString())
             }
         }
     }
