@@ -1,11 +1,13 @@
 package com.raulvieira.nextstoptoronto.database
 
+import android.util.Log
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.lang.Exception
 import java.util.*
 
 class Repository(private val apiService: RetrofitInterface, private val database: RoomDao) {
@@ -17,7 +19,13 @@ class Repository(private val apiService: RetrofitInterface, private val database
         flow { emit(apiService.requestStopPrediction(stopId = stopId).body()) }
 
     fun getRouteConfig(routeTag: String) =
-        flow { emit(apiService.requestRouteConfig(routeTag = routeTag).body()) }
+        flow {
+            try {
+                emit(apiService.requestRouteConfig(routeTag = routeTag).body())
+            } catch (e: Exception) {
+                Log.e("EXCEPTION", e.message.toString())
+            }
+        }
 
     fun requestPredictionsForMultiStops(
         scope: CoroutineScope,
@@ -25,7 +33,7 @@ class Repository(private val apiService: RetrofitInterface, private val database
     ): Flow<StopPredictionModel?> {
         return flow {
             while (scope.isActive) {
-                if(stops.isNotEmpty()){
+                if (stops.isNotEmpty()) {
                     emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
                 }
                 delay(10000)
