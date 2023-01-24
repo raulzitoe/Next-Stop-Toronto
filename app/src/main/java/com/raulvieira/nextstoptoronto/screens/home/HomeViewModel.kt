@@ -1,6 +1,5 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
-import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -8,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.database.Repository
 import com.raulvieira.nextstoptoronto.models.StopModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import isInternetOn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,7 +17,7 @@ import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: Repository, application: Application) : ViewModel() {
+class HomeViewModel @Inject constructor(private val repository: Repository) : ViewModel() {
 
     private val _uiState: MutableStateFlow<HomeScreenState> = MutableStateFlow(
         HomeScreenState.Loading
@@ -27,19 +25,20 @@ class HomeViewModel @Inject constructor(private val repository: Repository, appl
     val uiState: StateFlow<HomeScreenState> = _uiState
     var updatePercentage = mutableStateOf(0.0f)
     var showUpdateDialog = mutableStateOf(false)
-    var internet = isInternetOn(application, viewModelScope)
 
     init {
-        getRouteList()
-        updateStopsList(
-            onPercentageCompletion = { percentage ->
-                updatePercentage.value = percentage
-            },
-            isUpdating = { isUpdating -> showUpdateDialog.value = isUpdating })
-        viewModelScope.launch {
-            internet.collect{
-                Log.e("VIEWMODEL", "INTERNET: $it" )
-            }
+        initializeScreenState()
+    }
+
+    fun initializeScreenState(){
+        if(_uiState.value is HomeScreenState.Loading){
+            getRouteList()
+            updateStopsList(
+                onPercentageCompletion = { percentage ->
+                    updatePercentage.value = percentage
+                },
+                isUpdating = { isUpdating -> showUpdateDialog.value = isUpdating }
+            )
         }
     }
 

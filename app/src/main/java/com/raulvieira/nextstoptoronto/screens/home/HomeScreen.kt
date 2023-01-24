@@ -1,6 +1,9 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -26,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
+import com.raulvieira.nextstoptoronto.components.InternetStatusBar
 import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
 import com.raulvieira.nextstoptoronto.models.RouteLineModel
 import isInternetOn
@@ -45,9 +49,20 @@ fun HomeScreen(
     val updateProgress by viewModel.updatePercentage
     val scope = rememberCoroutineScope()
     val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
+    var visibility by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit, key2 = isInternetOn) {
         Log.e("INTERNET_CHANGED", "NEW VALUE: $isInternetOn")
+    }
+
+    LaunchedEffect(isInternetOn) {
+        visibility = if (!isInternetOn) {
+            true
+        } else {
+            viewModel.initializeScreenState()
+            delay(2000)
+            false
+        }
     }
 
     Scaffold(
@@ -70,19 +85,29 @@ fun HomeScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            when (val state = uiState) {
-                is HomeScreenState.Loading -> HomeScreenLoading()
-                is HomeScreenState.Success -> {
-                    val routeList = state.data.routeList
-                    HomeScreenSuccess(
-                        routeList = routeList,
-                        searchVisible = searchVisible,
-                        onNavigate = { onNavigate(it) },
-                        showUpdateDialog = showUpdateDialog,
-                        updateProgress = updateProgress
-                    )
+            Column {
+                AnimatedVisibility(
+                    visible = visibility,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    InternetStatusBar(isConnected = isInternetOn)
                 }
-                is HomeScreenState.Error -> HomeScreenError()
+                when (val state = uiState) {
+                    is HomeScreenState.Loading -> HomeScreenLoading()
+                    is HomeScreenState.Success -> {
+                        val routeList = state.data.routeList
+                        HomeScreenSuccess(
+                            routeList = routeList,
+                            searchVisible = searchVisible,
+                            onNavigate = { onNavigate(it) },
+                            showUpdateDialog = showUpdateDialog,
+                            updateProgress = updateProgress
+                        )
+                    }
+
+                    is HomeScreenState.Error -> HomeScreenError()
+                }
             }
         }
     }
@@ -150,9 +175,9 @@ private fun HomeScreenSuccess(
 
 @Composable
 private fun HomeScreenLoading() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator()
     }
@@ -246,7 +271,6 @@ private fun RouteCard(modifier: Modifier = Modifier, route: RouteLineModel, onCl
 }
 
 
-
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 private fun HomeScreenSuccessPreview() {
@@ -257,7 +281,7 @@ private fun HomeScreenSuccessPreview() {
             RouteLineModel(routeTag = "43", title = "43-Keele"),
             RouteLineModel(routeTag = "44", title = "44-Keele")
         ),
-        searchVisible =  true,
+        searchVisible = true,
         onNavigate = {},
         showUpdateDialog = false,
         updateProgress = 0.3f
