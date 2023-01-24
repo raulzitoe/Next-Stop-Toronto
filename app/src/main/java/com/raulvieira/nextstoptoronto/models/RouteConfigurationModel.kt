@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
-data class RouteConfigModel(
+data class RouteConfigurationModel(
     val route: RouteModel
 )
 
