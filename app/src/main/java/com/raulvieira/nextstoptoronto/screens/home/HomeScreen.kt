@@ -49,14 +49,14 @@ fun HomeScreen(
     val updateProgress by viewModel.updatePercentage
     val scope = rememberCoroutineScope()
     val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
-    var visibility by remember { mutableStateOf(false) }
+    var internetStatusBarVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = Unit, key2 = isInternetOn) {
         Log.e("INTERNET_CHANGED", "NEW VALUE: $isInternetOn")
     }
 
     LaunchedEffect(isInternetOn) {
-        visibility = if (!isInternetOn) {
+        internetStatusBarVisible = if (!isInternetOn) {
             true
         } else {
             viewModel.initializeScreenState()
@@ -87,7 +87,7 @@ fun HomeScreen(
         ) {
             Column {
                 AnimatedVisibility(
-                    visible = visibility,
+                    visible = internetStatusBarVisible,
                     enter = expandVertically(),
                     exit = shrinkVertically()
                 ) {
