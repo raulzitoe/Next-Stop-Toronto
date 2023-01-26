@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto.database
+package com.raulvieira.nextstoptoronto.repository
 
 import android.util.Log
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel

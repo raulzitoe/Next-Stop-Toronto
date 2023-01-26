@@ -3,9 +3,9 @@ package com.raulvieira.nextstoptoronto
 import android.content.Context
 import androidx.room.Room
 import com.google.gson.GsonBuilder
-import com.raulvieira.nextstoptoronto.database.AppDatabase
-import com.raulvieira.nextstoptoronto.database.Repository
-import com.raulvieira.nextstoptoronto.database.RetrofitInterface
+import com.raulvieira.nextstoptoronto.repository.AppDatabase
+import com.raulvieira.nextstoptoronto.repository.Repository
+import com.raulvieira.nextstoptoronto.repository.RetrofitInterface
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel

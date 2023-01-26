@@ -1,4 +1,4 @@
-package com.raulvieira.nextstoptoronto.database
+package com.raulvieira.nextstoptoronto.repository
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

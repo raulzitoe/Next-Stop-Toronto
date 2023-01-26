@@ -2,7 +2,7 @@ package com.raulvieira.nextstoptoronto.screens.routeinfo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.raulvieira.nextstoptoronto.database.Repository
+import com.raulvieira.nextstoptoronto.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
