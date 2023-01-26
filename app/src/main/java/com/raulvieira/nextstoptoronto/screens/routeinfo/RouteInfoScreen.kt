@@ -1,5 +1,8 @@
 package com.raulvieira.nextstoptoronto.screens.routeinfo
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,19 +17,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.raulvieira.nextstoptoronto.components.AnimatedSearchField
+import com.raulvieira.nextstoptoronto.components.InternetStatusBar
 import com.raulvieira.nextstoptoronto.components.ScrollToTopButton
+import com.raulvieira.nextstoptoronto.models.RouteConfigurationModel
+import com.raulvieira.nextstoptoronto.models.RouteModel
 import com.raulvieira.nextstoptoronto.models.StopModel
+import isInternetOn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -35,37 +40,40 @@ import kotlinx.coroutines.launch
 @Composable
 fun RouteInfoScreen(
     viewModel: RouteInfoViewModel = hiltViewModel(),
-    routeTag: String = "N/A",
+    routeTag: String = "",
     onNavigateUp: () -> Unit,
     onClickStop: (routeTag: String, stopId: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(""))
-    }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+    val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
+    var internetStatusBarVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(searchVisible) {
-        if (searchVisible) {
-            focusRequester.requestFocus()
-        }
+
+    LaunchedEffect(key1 = routeTag) {
+        viewModel.initializeScreenState(routeTag = routeTag)
     }
 
-    LaunchedEffect(key1 = Unit) {
-        lifecycle.repeatOnLifecycle(state = Lifecycle.State.STARTED) {
-            launch {
-                viewModel.getRouteConfig(routeTag)
-            }
+    LaunchedEffect(isInternetOn) {
+        internetStatusBarVisible = if (!isInternetOn) {
+            true
+        } else {
+            viewModel.initializeScreenState(routeTag = routeTag)
+            delay(2000)
+            false
         }
     }
-
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.route.title) },
+                title = {
+                    when (val state = uiState) {
+                        is RouteInfoScreenState.Success -> Text(state.data.route.title)
+                        else -> Text("N/A")
+                    }
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = { onNavigateUp() }
@@ -87,29 +95,26 @@ fun RouteInfoScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            if (uiState.route.stopsList.isEmpty()) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            Column {
+                AnimatedVisibility(
+                    visible = internetStatusBarVisible,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
                 ) {
-                    CircularProgressIndicator()
+                    InternetStatusBar(isConnected = isInternetOn)
                 }
-            } else {
-                Column {
-                    AnimatedSearchField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 10.dp, end = 10.dp, bottom = 5.dp)
-                            .focusRequester(focusRequester),
-                        searchVisible = searchVisible,
-                        searchedText = searchedText,
-                        onValueChange = { searchedText = it },
-                        onClear = { searchedText = TextFieldValue("") })
-                    StopsLazyColumn(
-                        modifier = Modifier.padding(horizontal = 5.dp),
-                        stops = uiState.route.stopsList,
-                        searchedText = searchedText,
-                        onClickStopItem = { stopId -> onClickStop(routeTag, stopId) })
+                when (val state = uiState) {
+                    is RouteInfoScreenState.Loading -> RouteInfoScreenLoading()
+                    is RouteInfoScreenState.Success -> {
+                        val routeConfiguration = state.data
+                        RouteInfoScreenSuccess(
+                            routeConfiguration = routeConfiguration,
+                            onClickStop = { stopId -> onClickStop(routeTag, stopId) },
+                            searchVisible = searchVisible
+                        )
+                    }
+
+                    is RouteInfoScreenState.Error -> RouteInfoScreenError()
                 }
             }
         }
@@ -117,7 +122,62 @@ fun RouteInfoScreen(
 }
 
 @Composable
-fun StopsLazyColumn(
+private fun RouteInfoScreenSuccess(
+    routeConfiguration: RouteConfigurationModel,
+    onClickStop: (String) -> Unit,
+    searchVisible: Boolean
+) {
+    val focusRequester = remember { FocusRequester() }
+    var searchedText by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    Column {
+        AnimatedSearchField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 5.dp)
+                .focusRequester(focusRequester),
+            searchVisible = searchVisible,
+            searchedText = searchedText,
+            onValueChange = { searchedText = it },
+            onClear = { searchedText = TextFieldValue("") })
+        StopsLazyColumn(
+            modifier = Modifier.padding(horizontal = 5.dp),
+            stops = routeConfiguration.route.stopsList,
+            searchedText = searchedText,
+            onClickStopItem = { stopId -> onClickStop(stopId) })
+    }
+}
+
+@Composable
+private fun RouteInfoScreenLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun RouteInfoScreenError() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "ERROR")
+    }
+}
+
+@Composable
+private fun StopsLazyColumn(
     modifier: Modifier = Modifier,
     stops: List<StopModel>,
     searchedText: TextFieldValue,
@@ -178,7 +238,7 @@ fun StopsLazyColumn(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopInfoCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
+private fun StopInfoCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
     Card(
         modifier = Modifier
             .wrapContentSize(), onClick = { onClick(routeInfo.stopId) }
@@ -201,33 +261,33 @@ fun StopInfoCard(routeInfo: StopModel, onClick: (stopId: String) -> Unit) {
     }
 }
 
-@Preview
+@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun AnimatedSearchFieldPreview() {
-    AnimatedSearchField(
-        searchVisible = true,
-        searchedText = TextFieldValue("Text to Search"),
-        onValueChange = {},
-        onClear = {})
-}
-
-@Preview
-@Composable
-fun StopInfoCardPreview() {
-    StopInfoCard(
-        routeInfo = StopModel("1234", "123", "12.4", "12.4", "Dufferin at Somewhere St "),
-        onClick = {})
-}
-
-@Preview
-@Composable
-fun StopsLazyColumnPreview() {
-    StopsLazyColumn(
-        stops = listOf(
-            StopModel(stopId = "1", title = "Stop 1 at that St"),
-            StopModel(stopId = "2", title = "Stop 2 at that St"),
-            StopModel(stopId = "3", title = "Stop 3 at that St")
+private fun RouteInfoScreenSuccessPreview() {
+    RouteInfoScreenSuccess(
+        routeConfiguration = RouteConfigurationModel(
+            route = RouteModel(
+                title = "29-Dufferin",
+                stopsList = listOf(
+                    StopModel(title = "This road at that road", stopId = "1"),
+                    StopModel(title = "This road at that road", stopId = "2"),
+                    StopModel(title = "This road at that road", stopId = "3")
+                )
+            )
         ),
-        searchedText = TextFieldValue(""),
-        onClickStopItem = {})
+        onClickStop = {},
+        searchVisible = true
+    )
+}
+
+@Preview(showSystemUi = true, showBackground = true)
+@Composable
+private fun RouteInfoScreenLoadingPreview() {
+    RouteInfoScreenLoading()
+}
+
+@Preview(showSystemUi = true, showBackground = true)
+@Composable
+private fun RouteInfoScreenErrorPreview() {
+    RouteInfoScreenError()
 }
