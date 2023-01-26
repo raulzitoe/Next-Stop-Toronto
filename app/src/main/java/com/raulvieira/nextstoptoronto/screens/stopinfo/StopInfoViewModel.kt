@@ -1,5 +1,6 @@
 package com.raulvieira.nextstoptoronto.screens.stopinfo
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.raulvieira.nextstoptoronto.repository.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
@@ -10,6 +11,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,10 +21,10 @@ class StopInfoViewModel @Inject constructor(
 ) : ViewModel(),
     DefaultLifecycleObserver {
 
-    private val _uiState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
-        StopPredictionModel(predictions = listOf())
+    private val _uiState: MutableStateFlow<StopInfoScreenState> = MutableStateFlow(
+        StopInfoScreenState.Loading
     )
-    val uiState: StateFlow<StopPredictionModel> = _uiState
+    val uiState: StateFlow<StopInfoScreenState> = _uiState
     private var job = Job()
         get() {
             if (field.isCancelled) field = Job()
@@ -73,13 +75,18 @@ class StopInfoViewModel @Inject constructor(
         }
     }
 
-    private fun subscribeToStopStream() {
+    fun subscribeToStopStream() {
         viewModelScope.launch(job) {
-            stopPredictionStream(viewModelScope).collect { data ->
-                data?.let { dataNotNull ->
-                    _uiState.update { dataNotNull }
+            try {
+                stopPredictionStream(viewModelScope).collect { data ->
+                    data?.let { dataNotNull ->
+                        _uiState.update { StopInfoScreenState.Success( data = dataNotNull ) }
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("EXCEPTION", e.message.toString())
             }
+
         }
     }
 }
