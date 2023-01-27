@@ -80,13 +80,12 @@ class StopInfoViewModel @Inject constructor(
             try {
                 stopPredictionStream(viewModelScope).collect { data ->
                     data?.let { dataNotNull ->
-                        _uiState.update { StopInfoScreenState.Success( data = dataNotNull ) }
+                        _uiState.update { StopInfoScreenState.Success(data = dataNotNull) }
                     }
                 }
             } catch (e: Exception) {
                 Log.e("EXCEPTION", e.message.toString())
             }
-
         }
     }
 }
