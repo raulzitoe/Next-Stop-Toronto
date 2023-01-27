@@ -1,6 +1,5 @@
 package com.raulvieira.nextstoptoronto.screens.home
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -50,10 +49,6 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
     var internetStatusBarVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(key1 = Unit, key2 = isInternetOn) {
-        Log.e("INTERNET_CHANGED", "NEW VALUE: $isInternetOn")
-    }
 
     LaunchedEffect(isInternetOn) {
         internetStatusBarVisible = if (!isInternetOn) {
