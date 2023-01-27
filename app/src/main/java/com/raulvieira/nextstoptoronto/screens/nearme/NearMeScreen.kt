@@ -4,6 +4,9 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Warning
@@ -25,12 +28,15 @@ import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.*
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.components.InternetStatusBar
 import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 import com.raulvieira.nextstoptoronto.utils.locationFlow
+import isInternetOn
+import kotlinx.coroutines.delay
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -40,6 +46,20 @@ import com.raulvieira.nextstoptoronto.utils.locationFlow
 fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
+    var internetStatusBarVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isInternetOn) {
+        internetStatusBarVisible = if (!isInternetOn) {
+            true
+        } else {
+            viewModel.cancelSubscription()
+            viewModel.subscribeToStopStream()
+            delay(2000)
+            false
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(viewModel)
@@ -62,8 +82,8 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         )
     }
 
-    LaunchedEffect(key1 = Unit, key2 = permissionsState.allPermissionsGranted) {
-        if (permissionsState.allPermissionsGranted) {
+    LaunchedEffect(key1 = permissionsState.allPermissionsGranted, key2 = isInternetOn) {
+        if (permissionsState.allPermissionsGranted && isInternetOn) {
             fusedLocationClient.locationFlow(this).collect { location ->
                 if (viewModel.userLocation?.latitude != location?.latitude
                     && viewModel.userLocation?.longitude != location?.longitude
@@ -76,7 +96,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         }
     }
 
-    DisposableEffect(key1 = lifecycleOwner) {
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
                 permissionsState.launchMultiplePermissionRequest()
@@ -112,49 +132,103 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
                 ) {
                     PreciseLocationPermissionBox(permissionsState = permissionsState)
                 }
-            } else if (uiState.predictions.isEmpty()) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                }
             } else {
-                StopsPredictionLazyColumn(
-                    predictions = uiState.predictions.sortedBy {
-                        viewModel.calculateStopDistance(it.stopTag)
-                    },
-                    onClickFavoriteItem = { isChecked, favoriteItem ->
-                        viewModel.handleFavoriteItem(
-                            isChecked,
-                            FavoritesModel(
-                                id = 0,
-                                routeTag = favoriteItem.routeTag,
-                                stopTag = favoriteItem.stopTag,
-                                stopTitle = favoriteItem.stopTitle
-                            )
-                        )
-                    },
-                    favoriteButtonChecked = { routeToCheck ->
-                        viewModel.isRouteFavorited(
-                            routeToCheck.stopTag,
-                            routeToCheck.routeTag,
-                            routeToCheck.stopTitle
-                        ).collectAsStateWithLifecycle(initialValue = false).value
-                    },
-                    distanceToStop = { routePredictionItem ->
-                        viewModel.calculateStopDistance(routePredictionItem.stopTag)
+                Column {
+                    AnimatedVisibility(
+                        visible = internetStatusBarVisible,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        InternetStatusBar(isConnected = isInternetOn)
                     }
-                )
-            }
+                    when (val state = uiState) {
+                        is NearMeScreenState.Loading -> NearMeScreenLoading()
+                        is NearMeScreenState.Success -> {
+                            val stopPrediction = state.data.predictions
+                            NearMeScreenSuccess(
+                                predictions = stopPrediction,
+                                onCalculateDistance = { stopTag ->
+                                    viewModel.calculateStopDistance(
+                                        stopTag
+                                    )
+                                },
+                                onClickFavoriteItem = { isChecked, favoriteItem ->
+                                    viewModel.handleFavoriteItem(
+                                        isChecked,
+                                        FavoritesModel(
+                                            id = 0,
+                                            routeTag = favoriteItem.routeTag,
+                                            stopTag = favoriteItem.stopTag,
+                                            stopTitle = favoriteItem.stopTitle
+                                        )
+                                    )
+                                },
+                                favoriteButtonChecked = { routeToCheck ->
+                                    viewModel.isRouteFavorited(
+                                        routeToCheck.stopTag,
+                                        routeToCheck.routeTag,
+                                        routeToCheck.stopTitle
+                                    ).collectAsStateWithLifecycle(initialValue = false).value
 
+                                }
+                            )
+
+                        }
+
+                        is NearMeScreenState.Error -> NearMeScreenError()
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun NearMeScreenSuccess(
+    predictions: List<RoutePredictionsModel>,
+    onCalculateDistance: (String) -> String,
+    onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
+    favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
+) {
+    StopsPredictionLazyColumn(
+        predictions = predictions.sortedBy { prediction ->
+            onCalculateDistance(prediction.stopTag)
+        },
+        onClickFavoriteItem = { isChecked, favoriteItem ->
+            onClickFavoriteItem(isChecked, favoriteItem)
+        },
+        favoriteButtonChecked = { routeToCheck ->
+            favoriteButtonChecked(routeToCheck)
+        },
+        distanceToStop = { prediction ->
+            onCalculateDistance(prediction.stopTag)
+        }
+    )
+}
+
+@Composable
+private fun NearMeScreenLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun NearMeScreenError() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "ERROR")
     }
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun PreciseLocationPermissionBox(
+private fun PreciseLocationPermissionBox(
     modifier: Modifier = Modifier,
     permissionsState: MultiplePermissionsState
 ) {
@@ -193,7 +267,7 @@ fun PreciseLocationPermissionBox(
                 Icon(Icons.Outlined.Warning, contentDescription = "Localized description")
                 Text(text = textToShow)
             }
-            if(!permissionsState.shouldShowRationale){
+            if (!permissionsState.shouldShowRationale) {
                 val context = LocalContext.current
                 val uri = Uri.fromParts("package", context.packageName, null)
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -203,8 +277,7 @@ fun PreciseLocationPermissionBox(
                 }) {
                     Text("Configuration")
                 }
-            }
-            else {
+            } else {
                 Button(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
                     Text(buttonText)
                 }
@@ -215,7 +288,7 @@ fun PreciseLocationPermissionBox(
 
 @Preview
 @Composable
-fun StopsLazyColumnPreview() {
+private fun StopsLazyColumnPreview() {
     StopsPredictionLazyColumn(
         predictions = listOf(
             RoutePredictionsModel(

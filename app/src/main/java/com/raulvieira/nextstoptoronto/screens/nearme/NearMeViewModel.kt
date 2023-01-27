@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.nearme
 
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
@@ -16,6 +17,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -23,19 +25,24 @@ import javax.inject.Inject
 class NearMeViewModel @Inject constructor(private val repository: Repository) : ViewModel(),
     DefaultLifecycleObserver {
 
-    private val _uiState: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
-        StopPredictionModel(listOf())
+    private val _uiState: MutableStateFlow<NearMeScreenState> = MutableStateFlow(
+        NearMeScreenState.Loading
     )
-    val uiState: StateFlow<StopPredictionModel> = _uiState
+    val uiState: StateFlow<NearMeScreenState> = _uiState
     private var stops: List<StopModel> = listOf()
     var userLocation: Location? = null
-    val userLocationFlow: MutableSharedFlow<Location> = MutableSharedFlow()
+    var userLocationFlow: MutableSharedFlow<Location> = MutableSharedFlow()
 
     private var job = Job()
         get() {
             if (field.isCancelled) field = Job()
             return field
         }
+
+    fun cancelSubscription() {
+        userLocation = null
+        job.cancel()
+    }
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
@@ -49,7 +56,7 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
 
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
-        if(!job.isActive){
+        if (!job.isActive) {
             subscribeToStopStream()
         }
     }
@@ -71,45 +78,49 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
         return "%.1f Km".format(distance[0] / 1000)
     }
 
-    private fun subscribeToStopStream() {
+    fun subscribeToStopStream() {
         viewModelScope.launch(job) {
-            userLocationFlow.collectLatest { userLocationData ->
-                userLocation = userLocationData
-                repository.getStopsFromDatabase().collect { stopsList ->
-                    stops = stopsList
-                    val stopsNearby: MutableList<StopModel> = mutableListOf()
-                    val flowList: MutableList<Flow<StopPredictionModel?>> = mutableListOf()
-                    stopsList.forEach { stop ->
-                        val distance = FloatArray(1)
-                        Location.distanceBetween(
-                            userLocationData.latitude,
-                            userLocationData.longitude,
-                            stop.latitude.toDouble(),
-                            stop.longitude.toDouble(),
-                            distance
-                        )
-                        if (distance[0] < 500) {
-                            stopsNearby.add(stop)
-                        }
-                    }
-                    stopsNearby.forEach { stop ->
-                        if(stop.stopId.isNotEmpty()){
-                            flowList.add(nearMePredictionStream(viewModelScope, stop.stopId))
-                        }
-                    }
-                    combine(*flowList.toTypedArray()) { combinedData ->
-                        val predictions: MutableList<RoutePredictionsModel> = mutableListOf()
-                        combinedData.forEach {
-                            it?.predictions?.let { it2 ->
-                                predictions.addAll(it2)
+            try {
+                userLocationFlow.collectLatest { userLocationData ->
+                    userLocation = userLocationData
+                    repository.getStopsFromDatabase().collect { stopsList ->
+                        stops = stopsList
+                        val stopsNearby: MutableList<StopModel> = mutableListOf()
+                        val flowList: MutableList<Flow<StopPredictionModel?>> = mutableListOf()
+                        stopsList.forEach { stop ->
+                            val distance = FloatArray(1)
+                            Location.distanceBetween(
+                                userLocationData.latitude,
+                                userLocationData.longitude,
+                                stop.latitude.toDouble(),
+                                stop.longitude.toDouble(),
+                                distance
+                            )
+                            if (distance[0] < 500) {
+                                stopsNearby.add(stop)
                             }
-
                         }
-                        StopPredictionModel(predictions = predictions)
-                    }.collect { stopData ->
-                        _uiState.update { stopData }
+                        stopsNearby.forEach { stop ->
+                            if (stop.stopId.isNotEmpty()) {
+                                flowList.add(nearMePredictionStream(viewModelScope, stop.stopId))
+                            }
+                        }
+                        combine(*flowList.toTypedArray()) { combinedData ->
+                            val predictions: MutableList<RoutePredictionsModel> = mutableListOf()
+                            combinedData.forEach {
+                                it?.predictions?.let { it2 ->
+                                    predictions.addAll(it2)
+                                }
+
+                            }
+                            StopPredictionModel(predictions = predictions)
+                        }.collect { stopData ->
+                            _uiState.update { NearMeScreenState.Success(data = stopData) }
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("EXCEPTION", e.message.toString())
             }
         }
     }
