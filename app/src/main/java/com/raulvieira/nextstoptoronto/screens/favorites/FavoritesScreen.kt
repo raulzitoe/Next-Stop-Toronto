@@ -1,26 +1,39 @@
 package com.raulvieira.nextstoptoronto.screens.favorites
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.components.InternetStatusBar
 import com.raulvieira.nextstoptoronto.components.StopsPredictionLazyColumn
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
+import isInternetOn
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,8 +41,20 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val isFavoriteEmpty by viewModel.isFavoriteEmpty.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
+    var internetStatusBarVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isInternetOn) {
+        internetStatusBarVisible = if (!isInternetOn) {
+            true
+        } else {
+            viewModel.subscribeToFavorites()
+            delay(2000)
+            false
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(viewModel)
@@ -53,49 +78,95 @@ fun FavoritesScreen(
                 .fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            if(isFavoriteEmpty){
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+            Column {
+                AnimatedVisibility(
+                    visible = internetStatusBarVisible,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
                 ) {
-                    Text("There are no routes on your favorites")
+                    InternetStatusBar(isConnected = isInternetOn)
                 }
-            }
-            else if (uiState.predictions.isEmpty()) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            else {
-                StopsPredictionLazyColumn(
-                    predictions = uiState.predictions,
-                    onClickFavoriteItem = { isChecked, favoriteItem ->
-                        viewModel.handleFavoriteItem(
-                            isChecked,
-                            FavoritesModel(
-                                id = 0,
-                                routeTag = favoriteItem.routeTag,
-                                stopTag = favoriteItem.stopTag,
-                                stopTitle = favoriteItem.stopTitle
-                            )
-                        )
-                    },
-                    favoriteButtonChecked = { routeToCheck ->
-                        viewModel.isRouteFavorited(
-                            routeToCheck.stopTag,
-                            routeToCheck.routeTag,
-                            routeToCheck.stopTitle
-                        ).collectAsStateWithLifecycle(initialValue = false).value
-                    },
-                    distanceToStop = { "" },
-                    hideEmptyRoute = false
-                )
-            }
+                when (val state = uiState) {
+                    is FavoritesScreenState.Loading -> FavoritesScreenLoading()
 
+                    is FavoritesScreenState.Success -> {
+                        val favoritesPrediction = state.data
+                        FavoritesScreenSuccess(
+                            predictions = favoritesPrediction.predictions,
+                            onClickFavoriteItem = { isChecked, favoriteItem ->
+                                viewModel.handleFavoriteItem(
+                                    isChecked,
+                                    FavoritesModel(
+                                        id = 0,
+                                        routeTag = favoriteItem.routeTag,
+                                        stopTag = favoriteItem.stopTag,
+                                        stopTitle = favoriteItem.stopTitle
+                                    )
+                                )
+                            },
+                            favoriteButtonChecked = { routeToCheck ->
+                                viewModel.isRouteFavorited(
+                                    routeToCheck.stopTag,
+                                    routeToCheck.routeTag,
+                                    routeToCheck.stopTitle
+                                ).collectAsStateWithLifecycle(initialValue = false).value
+                            }
+                        )
+
+                    }
+
+                    is FavoritesScreenState.Error -> FavoritesScreenError()
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun FavoritesScreenSuccess(
+    predictions: List<RoutePredictionsModel>,
+    onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
+    favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean
+) {
+    if (predictions.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("There are no routes on your favorites")
+        }
+    } else {
+        StopsPredictionLazyColumn(
+            predictions = predictions,
+            onClickFavoriteItem = { isChecked, favoriteItem ->
+                onClickFavoriteItem(isChecked, favoriteItem)
+            },
+            favoriteButtonChecked = { routeToCheck ->
+                favoriteButtonChecked(routeToCheck)
+            },
+            distanceToStop = { "" },
+            hideEmptyRoute = false
+        )
+    }
+}
+
+@Composable
+private fun FavoritesScreenLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun FavoritesScreenError() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "ERROR")
     }
 }
 
@@ -159,6 +230,6 @@ fun StopsLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = {"0.2 Km"}
+        distanceToStop = { "0.2 Km" }
     )
 }

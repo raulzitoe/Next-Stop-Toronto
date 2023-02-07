@@ -17,11 +17,23 @@ import javax.inject.Inject
 class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewModel(),
     DefaultLifecycleObserver {
 
-    private val _uiState: MutableStateFlow<StopPredictionModel> =
-        MutableStateFlow(StopPredictionModel(listOf()))
-    val uiState: StateFlow<StopPredictionModel> = _uiState
-    private val _isFavoriteEmpty: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    val isFavoriteEmpty: StateFlow<Boolean> = _isFavoriteEmpty
+    private val favoritesPrediction: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
+        StopPredictionModel(listOf())
+    )
+    private val isFavoriteEmpty: MutableStateFlow<Boolean> = MutableStateFlow(false)
+
+    val uiState: StateFlow<FavoritesScreenState> =
+        combine(isFavoriteEmpty, favoritesPrediction) { isFavoriteEmpty, favoritesPrediction ->
+            if(isFavoriteEmpty){
+                FavoritesScreenState.Success(data = StopPredictionModel(listOf()))
+            }
+            else {
+                FavoritesScreenState.Success(data = favoritesPrediction)
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), FavoritesScreenState.Loading)
+
+
+
     private var job = Job()
         get() {
             if (field.isCancelled) field = Job()
@@ -46,16 +58,16 @@ class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewM
         }
     }
 
-    private fun subscribeToFavorites() {
+    fun subscribeToFavorites() {
         viewModelScope.launch {
-            repository.isFavoritesEmpty().collect { value ->
-                _isFavoriteEmpty.update { value }
+            repository.isFavoritesEmpty().collect { isEmpty ->
+                isFavoriteEmpty.update { isEmpty }
             }
         }
         viewModelScope.launch(job) {
             stopPredictionStream(viewModelScope).collect { data ->
                 data?.let { dataNotNull ->
-                    _uiState.update { dataNotNull }
+                    favoritesPrediction.update { dataNotNull }
                 }
             }
         }
