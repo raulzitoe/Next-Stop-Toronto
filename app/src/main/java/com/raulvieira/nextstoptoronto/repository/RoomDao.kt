@@ -37,7 +37,7 @@ interface RoomDao {
     suspend fun insertStopToDatabase(stop: StopModel)
 
     @Query("SELECT * FROM stops_table")
-    fun getStopsFromDatabase(): Flow<List<StopModel>>
+    suspend fun getStopsFromDatabase(): List<StopModel>
 
     @Upsert
     suspend fun setLastUpdatedDate(dateModel: DateDatabaseModel)

@@ -4,43 +4,22 @@ import android.util.Log
 import androidx.lifecycle.*
 import com.raulvieira.nextstoptoronto.repository.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
-import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import javax.inject.Inject
+import kotlin.Exception
 
 @HiltViewModel
 class StopInfoViewModel @Inject constructor(
     private val repository: Repository,
     state: SavedStateHandle
-) : ViewModel(),
-    DefaultLifecycleObserver {
+) : ViewModel() {
 
-    private val _uiState: MutableStateFlow<StopInfoScreenState> = MutableStateFlow(
-        StopInfoScreenState.Loading
-    )
-    val uiState: StateFlow<StopInfoScreenState> = _uiState
-    private var job = Job()
-        get() {
-            if (field.isCancelled) field = Job()
-            return field
-        }
     private val _stopId = state.get<String>("stopId")
-
-    override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-        subscribeToStopStream()
-    }
-
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        job.cancel()
-    }
+    val uiState: StateFlow<StopInfoScreenState> = stopPredictionStream()
 
     fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
         viewModelScope.launch {
@@ -64,28 +43,29 @@ class StopInfoViewModel @Inject constructor(
     }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
+    private fun stopPredictionStream(): StateFlow<StopInfoScreenState> {
         return repository.getStopPrediction(_stopId ?: "").flatMapLatest { stopPrediction ->
-            if (stopPrediction == null || stopPrediction.predictions.isEmpty()) {
-                return@flatMapLatest flowOf(StopPredictionModel(listOf()))
+            flow<StopInfoScreenState> {
+                stopPrediction?.let { prediction ->
+                    val stopsDataFormatted =
+                        prediction.predictions.map { it.routeTag + "|" + it.stopTag }
+                   while (true) {
+                      try {
+                          repository.requestPredictionsForMultiStops(stopsDataFormatted)?.let { data ->
+                              emit(StopInfoScreenState.Success(data = data))
+                          }
+                      } catch (e: Exception) {
+                          Log.e("Exception", e.toString())
+                      }
+                       delay(10000)
+                   }
+               }
             }
-            val stopsDataFormatted =
-                stopPrediction.predictions.map { it.routeTag + "|" + it.stopTag }
-            repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
-        }
-    }
 
-    fun subscribeToStopStream() {
-        viewModelScope.launch(job) {
-            try {
-                stopPredictionStream(viewModelScope).collect { data ->
-                    data?.let { dataNotNull ->
-                        _uiState.update { StopInfoScreenState.Success(data = dataNotNull) }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("EXCEPTION", e.message.toString())
-            }
-        }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(),
+            initialValue = StopInfoScreenState.Loading
+        )
     }
 }

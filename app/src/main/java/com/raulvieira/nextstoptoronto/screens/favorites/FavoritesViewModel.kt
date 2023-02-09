@@ -1,8 +1,6 @@
 package com.raulvieira.nextstoptoronto.screens.favorites
 
-
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raulvieira.nextstoptoronto.repository.Repository
@@ -14,64 +12,45 @@ import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
-class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewModel(),
-    DefaultLifecycleObserver {
+class FavoritesViewModel @Inject constructor(val repository: Repository) : ViewModel() {
 
-    private val favoritesPrediction: MutableStateFlow<StopPredictionModel> = MutableStateFlow(
-        StopPredictionModel(listOf())
-    )
-    private val isFavoriteEmpty: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val favoritesPrediction: StateFlow<StopPredictionModel> = stopPredictionStream()
+    private val isFavoriteEmpty: StateFlow<Boolean> = repository.isFavoritesEmpty()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
 
     val uiState: StateFlow<FavoritesScreenState> =
         combine(isFavoriteEmpty, favoritesPrediction) { isFavoriteEmpty, favoritesPrediction ->
-            if(isFavoriteEmpty){
+            if (isFavoriteEmpty) {
                 FavoritesScreenState.Success(data = StopPredictionModel(listOf()))
-            }
-            else {
+            } else {
                 FavoritesScreenState.Success(data = favoritesPrediction)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), FavoritesScreenState.Loading)
 
-
-
-    private var job = Job()
-        get() {
-            if (field.isCancelled) field = Job()
-            return field
-        }
-
-    override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-        subscribeToFavorites()
-    }
-
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        job.cancel()
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun stopPredictionStream(scope: CoroutineScope): Flow<StopPredictionModel?> {
-        return repository.getFavorites().flatMapLatest { fav ->
-            val stopsDataFormatted = fav.map { it.routeTag + "|" + it.stopTag }
-            repository.requestPredictionsForMultiStops(scope, stopsDataFormatted)
-        }
-    }
+    private fun stopPredictionStream(): StateFlow<StopPredictionModel> =
+        repository.getFavorites().flatMapLatest { favorites ->
+            flow {
+                val stopsDataFormatted = favorites.map { it.routeTag + "|" + it.stopTag }
+                while (true) {
+                    try {
+                        repository.requestPredictionsForMultiStops(stopsDataFormatted)
+                            ?.let { favoritesPredictions ->
+                                emit(favoritesPredictions)
+                            }
 
-    fun subscribeToFavorites() {
-        viewModelScope.launch {
-            repository.isFavoritesEmpty().collect { isEmpty ->
-                isFavoriteEmpty.update { isEmpty }
-            }
-        }
-        viewModelScope.launch(job) {
-            stopPredictionStream(viewModelScope).collect { data ->
-                data?.let { dataNotNull ->
-                    favoritesPrediction.update { dataNotNull }
+                    } catch (e: Exception) {
+                        Log.e("Exception", e.toString())
+                    }
+                    delay(10000)
                 }
             }
-        }
-    }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(),
+            initialValue = StopPredictionModel(listOf())
+        )
+
 
     fun isRouteFavorited(
         stopTag: String,

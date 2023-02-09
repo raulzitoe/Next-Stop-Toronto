@@ -43,9 +43,7 @@ class MapScreenViewModel @Inject constructor(private val repository: Repository)
 
     private fun getStopsFromDatabase() {
         viewModelScope.launch {
-            repository.getStopsFromDatabase().collect { stopsData ->
-                _stopList.update { stopsData }
+                _stopList.update { repository.getStopsFromDatabase() }
             }
-        }
     }
 }

@@ -5,7 +5,6 @@ import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.lang.Exception
 import java.util.*
@@ -27,18 +26,10 @@ class Repository(private val apiService: RetrofitInterface, private val database
             }
         }
 
-    fun requestPredictionsForMultiStops(
-        scope: CoroutineScope,
-        stops: List<String>
-    ): Flow<StopPredictionModel?> {
-        return flow {
-            while (scope.isActive) {
-                if (stops.isNotEmpty()) {
-                    emit(apiService.requestPredictionsForMultiStops(stops = stops).body())
-                }
-                delay(10000)
-            }
-        }
+    suspend fun requestPredictionsForMultiStops(stops: List<String>): StopPredictionModel? {
+        return if (stops.isNotEmpty()) {
+            apiService.requestPredictionsForMultiStops(stops = stops).body()
+        } else null
     }
 
     suspend fun fetchStopsListFromApi(onPercentageCompletion: (Float) -> Unit): List<StopModel> {
@@ -79,7 +70,7 @@ class Repository(private val apiService: RetrofitInterface, private val database
 
     fun isFavoritesEmpty(): Flow<Boolean> = database.isFavoritesEmpty()
 
-    fun getStopsFromDatabase(): Flow<List<StopModel>> {
+    suspend fun getStopsFromDatabase(): List<StopModel> {
         return database.getStopsFromDatabase()
     }
 

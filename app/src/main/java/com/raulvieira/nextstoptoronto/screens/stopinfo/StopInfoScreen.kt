@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,7 +32,6 @@ fun StopInfoScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
     var internetStatusBarVisible by remember { mutableStateOf(false) }
@@ -42,16 +40,8 @@ fun StopInfoScreen(
         internetStatusBarVisible = if (!isInternetOn) {
             true
         } else {
-            viewModel.subscribeToStopStream()
             delay(2000)
             false
-        }
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.addObserver(viewModel)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(viewModel)
         }
     }
 

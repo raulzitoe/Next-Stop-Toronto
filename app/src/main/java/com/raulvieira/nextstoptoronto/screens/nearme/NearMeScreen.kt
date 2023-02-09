@@ -54,17 +54,8 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         internetStatusBarVisible = if (!isInternetOn) {
             true
         } else {
-            viewModel.cancelSubscription()
-            viewModel.subscribeToStopStream()
             delay(2000)
             false
-        }
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.addObserver(viewModel)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(viewModel)
         }
     }
 
@@ -104,6 +95,7 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            viewModel.userLocation = null
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
