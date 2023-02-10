@@ -29,7 +29,7 @@ fun StopPredictionCard(
     onClickFavorite: (Boolean) -> Unit,
     favoriteButtonChecked: Boolean,
     distanceToStop: () -> String,
-    counter: Int = 0
+    counter: Int
 ) {
     Card(
         modifier = Modifier
@@ -217,6 +217,7 @@ fun StopPredictionCardPreview() {
         onClick = {},
         onClickFavorite = {},
         favoriteButtonChecked = true,
-        distanceToStop = { "0.1 Km" }
+        distanceToStop = { "0.1 Km" },
+        counter = 0
     )
 }
