@@ -8,9 +8,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +28,8 @@ fun StopPredictionCard(
     onClick: (String) -> Unit,
     onClickFavorite: (Boolean) -> Unit,
     favoriteButtonChecked: Boolean,
-    distanceToStop: () -> String
+    distanceToStop: () -> String,
+    counter: Int = 0
 ) {
     Card(
         modifier = Modifier
@@ -124,15 +121,7 @@ fun StopPredictionCard(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(start = 20.dp)
                     ) {
-                        val counter = remember { mutableStateOf(0) }
-                        LaunchedEffect(key1 = counter.value) {
-                            delay(1000)
-                            counter.value++
-                        }
-                        LaunchedEffect(key1 = stopPrediction.seconds) {
-                            counter.value = 0
-                        }
-                        val predictionSeconds = stopPrediction.seconds.toInt() - counter.value
+                        val predictionSeconds = stopPrediction.seconds.toInt() - counter
                         val minutes = predictionSeconds / 60
                         val seconds = predictionSeconds % 60
                         Icon(

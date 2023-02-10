@@ -35,6 +35,7 @@ fun StopsPredictionLazyColumn(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var showScrollButton by remember { mutableStateOf(false) }
+    var counter by remember { mutableStateOf(0) }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex }.collect {
@@ -47,6 +48,14 @@ fun StopsPredictionLazyColumn(
         }
     }
 
+    LaunchedEffect(key1 = counter) {
+        delay(1000)
+        counter++
+    }
+    LaunchedEffect(key1 = predictions) {
+        counter = 0
+    }
+
     LazyColumn(state = listState) {
         itemsIndexed(predictions) { index, routePredictionItem ->
             if (!hideEmptyRoute || routePredictionItem.directions.isNotEmpty()) {
@@ -57,7 +66,8 @@ fun StopsPredictionLazyColumn(
                         onClickFavoriteItem(isChecked, routePredictionItem)
                     },
                     favoriteButtonChecked = favoriteButtonChecked(routePredictionItem),
-                    distanceToStop = { distanceToStop(routePredictionItem) }
+                    distanceToStop = { distanceToStop(routePredictionItem) },
+                    counter = counter
                 )
             }
             if (isOnStopScreen && predictions.size > 1 && index == 0) {
