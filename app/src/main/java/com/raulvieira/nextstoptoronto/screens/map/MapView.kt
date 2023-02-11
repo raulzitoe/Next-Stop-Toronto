@@ -232,7 +232,7 @@ fun MapView(
                 mapViewState.isAnimating
                 mapViewState.controller.animateTo(
                     it, mapViewState.zoomLevelDouble,
-                    1000L, 0f
+                    1000L, mapViewState.mapOrientation
                 )
                 mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
                     while (mapViewState.isAnimating) {
