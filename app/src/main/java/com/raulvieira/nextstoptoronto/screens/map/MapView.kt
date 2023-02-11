@@ -10,8 +10,11 @@ import android.view.MotionEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
@@ -29,6 +34,8 @@ import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import com.raulvieira.nextstoptoronto.utils.locationFlow
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.clustering.RadiusMarkerClusterer
@@ -71,7 +78,7 @@ fun MapView(
             context
         )
     }
-    var userLocation: Location? = remember {null}
+    var userLocation: Location? = remember { null }
     val permissionsState =
         rememberMultiplePermissionsState(
             permissions = listOf(
@@ -79,6 +86,8 @@ fun MapView(
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
+    var recalculateStops by remember { mutableStateOf(false) }
+
     if (permissionsState.allPermissionsGranted) {
         LaunchedEffect(key1 = fusedLocationClient.lastLocation) {
             if (permissionsState.allPermissionsGranted) {
@@ -93,22 +102,23 @@ fun MapView(
         }
     }
 
-
+    LaunchedEffect(key1 = recalculateStops) {
+        filterStopMarkersOverlay(
+            context,
+            stopsList,
+            mapViewState,
+            onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
+            stopState,
+            coroutineScope,
+            boundingBox = mapViewState.boundingBox
+        )
+    }
 
     DisposableEffect(key1 = lifecycle, key2 = stopsList) {
         val lifecycleObserver =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_RESUME) {
-                    val stopMarkersOverlay = filteredMarkersOverlay(
-                        context,
-                        stopsList,
-                        mapViewState,
-                        onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
-                        stopState,
-                        coroutineScope,
-                        boundingBox = mapViewState.boundingBox
-                    )
-                    mapViewState.overlays[2] = stopMarkersOverlay
+                    recalculateStops = !recalculateStops
                 }
             }
 
@@ -117,6 +127,7 @@ fun MapView(
             lifecycle.removeObserver(lifecycleObserver)
         }
     }
+
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
             factory = {
@@ -159,7 +170,8 @@ fun MapView(
                     }
                 }
 
-                val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState)
+                val locationOverlay =
+                    MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState)
 
                 // Override to improve map rotation smoothness - decreased deltaTime
                 var timeLastSet = 0L
@@ -194,57 +206,53 @@ fun MapView(
                         mapNorthCompassOverlay
                     )
                 mapViewState.overlays.addAll(overlays)
-
-
-
                 // Events Overlays needs to be first to listen to events
                 mapViewState.overlays.add(0, mapEventsOverlay)
-
-
-
                 mapViewState
             },
             modifier = modifier
         ) { mapView ->
-
             mapViewState.setOnTouchListener { view, motionEvent ->
                 if (motionEvent.actionMasked == MotionEvent.ACTION_UP) {
-                    val stops = filteredMarkersOverlay(
-                        context,
-                        stopsList,
-                        (view as MapView),
-                        onRequestStopInfo = { stopId -> onRequestStopInfo(stopId) },
-                        stopState,
-                        coroutineScope,
-                        boundingBox = view.boundingBox
-                    )
-                    view.overlays[2] = stops
+                    recalculateStops = !recalculateStops
                     view.invalidate()
                 }
+
+
                 view.performClick()
             }
-
             onLoad?.invoke(mapView)
         }
 
-
-        Button(modifier = Modifier
+        IconButton(modifier = Modifier
             .padding(20.dp)
-            .align(Alignment.BottomEnd),onClick = {
+            .align(Alignment.BottomEnd), onClick = {
             val geoPoint = userLocation?.let { GeoPoint(it) }
             geoPoint?.let {
-                mapViewState.controller.animateTo(it, mapViewState.zoomLevelDouble,
-            1000L, 0f) } }) {
-            Text(text = "Center Map")
+                mapViewState.isAnimating
+                mapViewState.controller.animateTo(
+                    it, mapViewState.zoomLevelDouble,
+                    1000L, 0f
+                )
+                mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
+                    while (mapViewState.isAnimating) {
+                        delay(50)
+                    }
+                    recalculateStops = !recalculateStops
+                }
+
+            }
+        }) {
+            Icon(
+                modifier = Modifier.size(40.dp),
+                imageVector = Icons.Filled.MyLocation,
+                contentDescription = "Center my location"
+            )
         }
     }
-
-
-
-
 }
 
-fun isStopWithinBoundBox(
+private fun isStopWithinBoundBox(
     stopLatitude: Double,
     stopLongitude: Double,
     boundingBox: BoundingBox
@@ -257,7 +265,7 @@ fun isStopWithinBoundBox(
     return false
 }
 
-fun filteredMarkersOverlay(
+private fun filterStopMarkersOverlay(
     context: Context,
     stopsList: List<StopModel>,
     mapView: MapView,
@@ -265,7 +273,7 @@ fun filteredMarkersOverlay(
     stopState: StateFlow<StopPredictionModel>,
     coroutineScope: CoroutineScope,
     boundingBox: BoundingBox
-): RadiusMarkerClusterer {
+) {
     val stopMarkersOverlay = RadiusMarkerClusterer(context)
     for (stop in stopsList) {
         if (!isStopWithinBoundBox(
@@ -303,5 +311,6 @@ fun filteredMarkersOverlay(
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         stopMarkersOverlay.add(marker)
     }
-    return stopMarkersOverlay
+    mapView.overlays[2] = stopMarkersOverlay
+    mapView.invalidate()
 }
