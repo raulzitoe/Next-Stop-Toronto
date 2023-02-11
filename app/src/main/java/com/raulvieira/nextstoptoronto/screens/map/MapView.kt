@@ -286,7 +286,7 @@ private fun filterStopMarkersOverlay(
         val marker = Marker(mapView)
 
         marker.position = GeoPoint(stop.latitude.toDouble(), stop.longitude.toDouble())
-        marker.icon = context.getDrawable(R.drawable.ic_person_pin)
+        marker.icon = context.getDrawable(R.drawable.ic_bus_stop)
         marker.setOnMarkerClickListener { thisMarker, _ ->
             onRequestStopInfo(stop.stopId)
             coroutineScope.launch {
