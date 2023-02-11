@@ -4,21 +4,27 @@ package com.raulvieira.nextstoptoronto.screens.map
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.view.MotionEvent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -30,12 +36,12 @@ import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
-import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import com.raulvieira.nextstoptoronto.utils.locationFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import com.raulvieira.nextstoptoronto.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -172,8 +178,11 @@ fun MapView(
                     }
                 }
 
-                val locationOverlay =
-                    MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState)
+                val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState).apply {
+                    context.getDrawable(R.drawable.ic_navigation)?.let {
+                        setDirectionIcon(drawableToBitmap(it))
+                    }
+                }
 
                 // Override to improve map rotation smoothness - decreased deltaTime
                 var timeLastSet = 0L
@@ -246,12 +255,15 @@ fun MapView(
 
             }
         }) {
-            Icon(
-                modifier = Modifier.size(40.dp),
-                imageVector = Icons.Filled.MyLocation,
-                contentDescription = "Center my location",
-                tint = Color.Black
-            )
+            Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.background)) {
+                Icon(
+                    modifier = Modifier.size(20.dp).align(Alignment.Center),
+                    imageVector = Icons.Filled.MyLocation,
+                    contentDescription = "Center my location",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
         }
     }
 }
@@ -322,4 +334,21 @@ private fun filterStopMarkersOverlay(
     }
     mapView.overlays[2] = stopMarkersOverlay
     mapView.invalidate()
+}
+
+private fun drawableToBitmap(drawable: Drawable): Bitmap {
+    if (drawable is BitmapDrawable) {
+        return drawable.bitmap
+    }
+
+    val bitmap = Bitmap.createBitmap(
+        drawable.intrinsicWidth,
+        drawable.intrinsicHeight,
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+
+    return bitmap
 }
