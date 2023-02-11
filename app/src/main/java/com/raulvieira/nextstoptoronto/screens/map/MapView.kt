@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -66,8 +67,9 @@ fun MapView(
     modifier: Modifier = Modifier,
     onLoad: ((map: MapView) -> Unit)? = null,
     onRequestStopInfo: (stopId: String) -> Unit,
-    stopState: StateFlow<StopPredictionModel>,
+    stopState: StateFlow<StopPredictionModel?>,
     stopsList: List<StopModel>,
+    onCloseStopInfo: () -> Unit
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
     val context = LocalContext.current
@@ -189,6 +191,7 @@ fun MapView(
 
                 val mapEventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
                     override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                        onCloseStopInfo()
                         InfoWindow.closeAllInfoWindowsOn(mapViewState)
                         return true
                     }
@@ -246,7 +249,8 @@ fun MapView(
             Icon(
                 modifier = Modifier.size(40.dp),
                 imageVector = Icons.Filled.MyLocation,
-                contentDescription = "Center my location"
+                contentDescription = "Center my location",
+                tint = Color.Black
             )
         }
     }
@@ -270,7 +274,7 @@ private fun filterStopMarkersOverlay(
     stopsList: List<StopModel>,
     mapView: MapView,
     onRequestStopInfo: (stopId: String) -> Unit,
-    stopState: StateFlow<StopPredictionModel>,
+    stopState: StateFlow<StopPredictionModel?>,
     coroutineScope: CoroutineScope,
     boundingBox: BoundingBox
 ) {
@@ -290,19 +294,24 @@ private fun filterStopMarkersOverlay(
         marker.setOnMarkerClickListener { thisMarker, _ ->
             onRequestStopInfo(stop.stopId)
             coroutineScope.launch {
-                stopState.collect {
-                    var textString: String = stop.title
-                    if (it.predictions.isNotEmpty()) {
-                        it.predictions.forEach { route ->
-                            if (route.directions.isNotEmpty()) {
-                                val routeDirection =
-                                    route.directions[0].title.substringBefore(" ")
-                                textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
+                stopState.collect { stopPrediction ->
+                    if (stopPrediction != null) {
+                        var textString: String = stop.title
+                        thisMarker.showInfoWindow()
+                        if (stopPrediction.predictions.isNotEmpty()) {
+                            stopPrediction.predictions.forEach { route ->
+                                if (route.directions.isNotEmpty()) {
+                                    val routeDirection =
+                                        route.directions[0].title.substringBefore(" ")
+                                    textString += "\n" + route.routeTag + " - " + routeDirection + " in: " + route.directions[0].predictions.first().minutes + " min"
+                                }
                             }
+                        } else {
+                            textString += "\n Loading..."
                         }
+                        thisMarker.title = textString
+                        thisMarker.showInfoWindow()
                     }
-                    thisMarker.title = textString
-                    thisMarker.showInfoWindow()
                 }
             }
             true

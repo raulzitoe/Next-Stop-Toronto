@@ -47,9 +47,10 @@ fun MapScreen(
     ) {
         MapView(
             modifier = Modifier.fillMaxSize(),
-            onRequestStopInfo = { stopId -> viewModel.getStopPrediction(stopId) },
+            onRequestStopInfo = { stopId -> viewModel.setStopIdValue(stopId) },
             stopState = viewModel.stopState,
-            stopsList = stopsList
+            stopsList = stopsList,
+            onCloseStopInfo = { viewModel.clearStopIdFlow() }
         )
     }
 }
