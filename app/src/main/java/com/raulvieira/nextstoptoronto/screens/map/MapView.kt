@@ -62,9 +62,9 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import kotlin.math.ceil
 
 
-const val START_ZOOM = 18.0
-const val STARTING_LATITUDE = 43.656339
-const val STARTING_LONGITUDE = -79.460403
+const val START_ZOOM = 16.0
+const val STARTING_LATITUDE = 43.666553
+const val STARTING_LONGITUDE = -79.403691
 
 @OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("ClickableViewAccessibility", "MissingPermission")
