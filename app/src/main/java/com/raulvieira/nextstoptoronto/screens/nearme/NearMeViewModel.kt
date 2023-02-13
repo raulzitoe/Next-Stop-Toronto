@@ -4,17 +4,17 @@ import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.raulvieira.nextstoptoronto.repository.Repository
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
+import com.raulvieira.nextstoptoronto.repository.Repository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.lang.Exception
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,10 +46,13 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
 
         return userLocationFlow.flatMapLatest { userLocationData ->
             userLocation = userLocationData
-            val stopsList = repository.getStopsFromDatabase()
-            stops = stopsList
+            val stopsList = stops.ifEmpty {
+                val stopsData = repository.getStopsFromDatabase()
+                stops = stopsData
+                stopsData
+            }
+
             val stopsNearby: MutableList<StopModel> = mutableListOf()
-            val flowList: MutableList<Flow<StopPredictionModel>> = mutableListOf()
             stopsList.forEach { stop ->
                 val distance = FloatArray(1)
                 Location.distanceBetween(
@@ -59,26 +62,22 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
                     stop.longitude.toDouble(),
                     distance
                 )
-                if (distance[0] < 500) {
+                if (distance[0] < 300) {
                     stopsNearby.add(stop)
                 }
             }
-            stopsNearby.forEach { stop ->
-                if (stop.stopId.isNotEmpty()) {
-                    flowList.add(nearMePredictionStream(stop.stopId))
-                }
-            }
-            channelFlow<NearMeScreenState> {
-                combine(*flowList.toTypedArray()) { combinedData ->
+            flow {
+                while (true) {
                     val predictions: MutableList<RoutePredictionsModel> = mutableListOf()
-                    combinedData.forEach {
-                        predictions.addAll(it.predictions)
+                    Log.e("STOPS", stopsNearby.toString())
+                    stopsNearby.forEach { stop ->
+                        if (stop.stopId.isNotEmpty()) {
+                            predictions.addAll(nearMePrediction(stop.stopId).predictions)
+                        }
                     }
-                    StopPredictionModel(predictions = predictions)
-                }.collectLatest { stopData ->
-                    send(NearMeScreenState.Success(data = stopData))
+                    emit(NearMeScreenState.Success(StopPredictionModel(predictions = predictions)))
+                    delay(10000)
                 }
-
             }
         }.stateIn(
             viewModelScope,
@@ -87,56 +86,51 @@ class NearMeViewModel @Inject constructor(private val repository: Repository) : 
         )
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun nearMePredictionStream(
+    private suspend fun nearMePrediction(
         stopId: String
-    ): Flow<StopPredictionModel> {
-        return repository.getStopPrediction(stopId).flatMapLatest { stopPrediction ->
-            flow {
+    ): StopPredictionModel {
+        return withContext(viewModelScope.coroutineContext) {
+            if(stopId.isNotEmpty()){
+                val stopPrediction = repository.getStopPrediction(stopId).first()
                 stopPrediction?.let { prediction ->
                     val stopsDataFormatted =
                         prediction.predictions.map { it.routeTag + "|" + it.stopTag }
-                    while (true) {
-                        try {
-                            repository.requestPredictionsForMultiStops(stopsDataFormatted)
-                                ?.let { data ->
-                                    emit(data)
-                                }
-                        } catch (e: Exception) {
-                            Log.e("Exception", e.toString())
-                        }
-                        delay(10000)
+                    try {
+                        repository.requestPredictionsForMultiStops(stopsDataFormatted)
+                            ?.let { data ->
+                                return@withContext data
+                            }
+                    } catch (e: Exception) {
+                        Log.e("Exception", e.toString())
                     }
                 }
             }
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(),
-            initialValue = StopPredictionModel(listOf())
-        )
+            StopPredictionModel(listOf())
+        }
+
     }
 
-    fun isRouteFavorited(
-        stopTag: String,
-        routeTag: String,
-        stopTitle: String
-    ): SharedFlow<Boolean> = flow {
-        repository.isRouteFavorited(
-            stopTag = stopTag,
-            routeTag = routeTag,
-            stopTitle = stopTitle
-        ).collect {
-            emit(it)
-        }
-    }.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
+fun isRouteFavorited(
+    stopTag: String,
+    routeTag: String,
+    stopTitle: String
+): SharedFlow<Boolean> = flow {
+    repository.isRouteFavorited(
+        stopTag = stopTag,
+        routeTag = routeTag,
+        stopTitle = stopTitle
+    ).collect {
+        emit(it)
+    }
+}.shareIn(viewModelScope, replay = 1, started = SharingStarted.Lazily)
 
-    fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
-        viewModelScope.launch {
-            if (isButtonChecked) {
-                repository.addToFavorites(item)
-            } else {
-                repository.removeFromFavorites(item.stopTag, item.routeTag)
-            }
+fun handleFavoriteItem(isButtonChecked: Boolean, item: FavoritesModel) {
+    viewModelScope.launch {
+        if (isButtonChecked) {
+            repository.addToFavorites(item)
+        } else {
+            repository.removeFromFavorites(item.stopTag, item.routeTag)
         }
     }
+}
 }

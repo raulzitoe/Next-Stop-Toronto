@@ -2,6 +2,7 @@ package com.raulvieira.nextstoptoronto.screens.nearme
 
 import android.Manifest
 import android.content.Intent
+import android.location.Location
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
@@ -75,12 +76,20 @@ fun NearMeScreen(viewModel: NearMeViewModel = hiltViewModel()) {
 
     LaunchedEffect(key1 = permissionsState.allPermissionsGranted, key2 = isInternetOn) {
         if (permissionsState.allPermissionsGranted && isInternetOn) {
-            fusedLocationClient.locationFlow(this).collect { location ->
-                if (viewModel.userLocation?.latitude != location?.latitude
-                    && viewModel.userLocation?.longitude != location?.longitude
-                ) {
-                    location?.let {
+            fusedLocationClient.locationFlow(this).collect { newLocation ->
+                val distance = FloatArray(1)
+                val userLocation = viewModel.userLocation
+                Location.distanceBetween(
+                    userLocation?.latitude ?: 0.0,
+                    userLocation?.longitude ?: 0.0,
+                    newLocation?.latitude ?: 0.0,
+                    newLocation?.longitude ?: 0.0,
+                    distance
+                )
+                if (distance.first() > 100) {
+                    newLocation?.let {
                         viewModel.userLocationFlow.emit(it)
+                        println("LOCATION EMITTED")
                     }
                 }
             }
