@@ -5,3 +5,5 @@
 /codeStyles/codeStyleConfig.xml
 /kotlinc.xml
 /codeStyles/Project.xml
+/deploymentTargetSelector.xml
+/migrations.xml
