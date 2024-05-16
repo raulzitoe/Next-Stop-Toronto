@@ -1,5 +1,8 @@
 package com.raulvieira.nextstoptoronto.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -16,11 +19,11 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.raulvieira.nextstoptoronto.R
 import com.raulvieira.nextstoptoronto.screens.favorites.FavoritesScreen
 import com.raulvieira.nextstoptoronto.screens.home.HomeScreen
@@ -29,10 +32,10 @@ import com.raulvieira.nextstoptoronto.screens.nearme.NearMeScreen
 import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoScreen
 import com.raulvieira.nextstoptoronto.screens.stopinfo.StopInfoScreen
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun MyAppNavHost(
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController = rememberAnimatedNavController(),
     startDestination: String
 ) {
     val bottomBarItems = listOf(
@@ -75,23 +78,122 @@ fun MyAppNavHost(
             }
         }
     ) { innerPadding ->
-        NavHost(
+        AnimatedNavHost(
             navController,
             startDestination = startDestination,
             Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Home.route) {
+            composable(
+                route = Screen.Home.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }
+            ) {
                 HomeScreen(onNavigate = { busRouteTag ->
                     navController.navigate(
                         "${Screen.RouteInfoScreen.route}?routeTag=${busRouteTag}"
                     )
                 })
             }
-            composable(Screen.MapScreen.route) { MapScreen() }
-            composable(Screen.FavoritesScreen.route) { FavoritesScreen() }
+
+            composable(route = Screen.MapScreen.route, enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(600)
+                )
+            },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }) { MapScreen() }
+
+            composable(route = Screen.FavoritesScreen.route, enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(600)
+                )
+            },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }) { FavoritesScreen() }
+
             composable(
                 route = "${Screen.RouteInfoScreen.route}?routeTag={routeTag}",
-                arguments = listOf(navArgument("routeTag") { type = NavType.StringType })
+                arguments = listOf(navArgument("routeTag") { type = NavType.StringType }),
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }
             ) {
                 RouteInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
@@ -106,13 +208,60 @@ fun MyAppNavHost(
                 route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopId={stopId}",
                 arguments = listOf(
                     navArgument("routeTag") { type = NavType.StringType },
-                    navArgument("stopId") { type = NavType.StringType })
+                    navArgument("stopId") { type = NavType.StringType }),
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }
             ) {
                 StopInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
                     onNavigateUp = { navController.navigateUp() })
             }
-            composable(route = Screen.NearMeScreen.route) { NearMeScreen()}
+            composable(route = Screen.NearMeScreen.route, enterTransition = {
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Start,
+                    animationSpec = tween(600)
+                )
+            },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }) { NearMeScreen() }
         }
     }
 }

@@ -19,7 +19,7 @@ android {
         }
     }
     namespace 'com.raulvieira.nextstoptoronto'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.raulvieira.nextstoptoronto"
@@ -81,6 +81,7 @@ dependencies {
     implementation 'androidx.compose.material:material-icons-extended'
     implementation "androidx.lifecycle:lifecycle-runtime-compose:2.6.0-alpha04"
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha04'
+    implementation "androidx.compose.animation:animation:1.4.2"
 
     // Compose Navigation
     implementation "androidx.navigation:navigation-compose:2.6.0-alpha04"
@@ -113,6 +114,9 @@ dependencies {
 
     // Accompanist - Permissions
     implementation "com.google.accompanist:accompanist-permissions:0.28.0"
+
+    // Accompanist - Navigation Animations
+    implementation "com.google.accompanist:accompanist-navigation-animation:0.31.1-alpha"
 
     // Google Play Services - Location
     implementation 'com.google.android.gms:play-services-location:21.0.1'
