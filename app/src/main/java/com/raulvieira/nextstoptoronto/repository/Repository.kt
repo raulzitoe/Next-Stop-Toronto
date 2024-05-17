@@ -8,8 +8,9 @@ import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.flow.*
 import java.lang.Exception
 import java.util.*
+import javax.inject.Inject
 
-class Repository(private val apiService: RetrofitInterface, private val database: RoomDao) {
+class Repository @Inject constructor(private val apiService: RetrofitInterface, private val database: RoomDao) {
 
     // API RELATED
     suspend fun getRouteList() = apiService.requestRouteList()

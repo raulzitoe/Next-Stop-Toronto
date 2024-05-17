@@ -32,7 +32,7 @@ import com.raulvieira.nextstoptoronto.screens.nearme.NearMeScreen
 import com.raulvieira.nextstoptoronto.screens.routeinfo.RouteInfoScreen
 import com.raulvieira.nextstoptoronto.screens.stopinfo.StopInfoScreen
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun MyAppNavHost(
     navController: NavHostController = rememberAnimatedNavController(),
