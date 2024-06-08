@@ -4,10 +4,7 @@ package com.raulvieira.nextstoptoronto.screens.map
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.location.Location
 import android.view.MotionEvent
 import androidx.compose.foundation.background
@@ -29,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -86,7 +84,7 @@ fun MapView(
             context
         )
     }
-    var userLocation: Location? = remember { null }
+    var userLocation: Location? by remember { mutableStateOf(null) }
     val permissionsState =
         rememberMultiplePermissionsState(
             permissions = listOf(
@@ -103,6 +101,9 @@ fun MapView(
                     if (userLocation?.latitude != location?.latitude
                         && userLocation?.longitude != location?.longitude
                     ) {
+                        if (userLocation == null) {
+                            centerMapToLocation(location, mapViewState, onRecalculateStops = { recalculateStops = !recalculateStops})
+                        }
                         userLocation = location
                     }
                 }
@@ -180,7 +181,7 @@ fun MapView(
 
                 val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState).apply {
                     context.getDrawable(R.drawable.ic_navigation)?.let {
-                        setDirectionIcon(drawableToBitmap(it))
+                        setDirectionIcon(it.toBitmap())
                     }
                 }
 
@@ -193,7 +194,7 @@ fun MapView(
                         currentAngle += deltaAngle
                         if (System.currentTimeMillis() - deltaTime > timeLastSet) {
                             timeLastSet = System.currentTimeMillis()
-                            mapViewState.mapOrientation = mapViewState.mapOrientation + currentAngle
+                            mapViewState.mapOrientation += currentAngle
                         }
                     }
                 }
@@ -238,23 +239,17 @@ fun MapView(
 
         IconButton(modifier = Modifier
             .padding(20.dp)
-            .align(Alignment.BottomEnd), onClick = {
-            val geoPoint = userLocation?.let { GeoPoint(it) }
-            geoPoint?.let {
-                mapViewState.isAnimating
-                mapViewState.controller.animateTo(
-                    it, mapViewState.zoomLevelDouble,
-                    1000L, mapViewState.mapOrientation
-                )
-                mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
-                    while (mapViewState.isAnimating) {
-                        delay(50)
+            .align(Alignment.BottomEnd),
+            onClick = {
+                centerMapToLocation(
+                    userLocation = userLocation,
+                    mapViewState = mapViewState,
+                    onRecalculateStops = {
+                        recalculateStops = !recalculateStops
                     }
-                    recalculateStops = !recalculateStops
-                }
-
+                )
             }
-        }) {
+        ) {
             Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.background)) {
                 Icon(
                     modifier = Modifier.size(20.dp).align(Alignment.Center),
@@ -268,17 +263,35 @@ fun MapView(
     }
 }
 
+private fun centerMapToLocation(
+    userLocation: Location?,
+    mapViewState: MapView,
+    onRecalculateStops: () -> Unit
+) {
+    val geoPoint = userLocation?.let { GeoPoint(it) }
+    geoPoint?.let {
+        mapViewState.isAnimating
+        mapViewState.controller.animateTo(
+            it, mapViewState.zoomLevelDouble,
+            1000L, mapViewState.mapOrientation
+        )
+        mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
+            while (mapViewState.isAnimating) {
+                delay(50)
+            }
+            onRecalculateStops()
+        }
+
+    }
+}
+
 private fun isStopWithinBoundBox(
     stopLatitude: Double,
     stopLongitude: Double,
     boundingBox: BoundingBox
 ): Boolean {
-    if (stopLatitude > boundingBox.latSouth && stopLatitude < boundingBox.latNorth
-        && stopLongitude < boundingBox.lonEast && stopLongitude > boundingBox.lonWest
-    ) {
-        return true
-    }
-    return false
+    return (stopLatitude > boundingBox.latSouth && stopLatitude < boundingBox.latNorth
+            && stopLongitude < boundingBox.lonEast && stopLongitude > boundingBox.lonWest)
 }
 
 private fun filterStopMarkersOverlay(
@@ -334,21 +347,4 @@ private fun filterStopMarkersOverlay(
     }
     mapView.overlays[2] = stopMarkersOverlay
     mapView.invalidate()
-}
-
-private fun drawableToBitmap(drawable: Drawable): Bitmap {
-    if (drawable is BitmapDrawable) {
-        return drawable.bitmap
-    }
-
-    val bitmap = Bitmap.createBitmap(
-        drawable.intrinsicWidth,
-        drawable.intrinsicHeight,
-        Bitmap.Config.ARGB_8888
-    )
-    val canvas = Canvas(bitmap)
-    drawable.setBounds(0, 0, canvas.width, canvas.height)
-    drawable.draw(canvas)
-
-    return bitmap
 }
