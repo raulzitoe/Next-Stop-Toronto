@@ -21,11 +21,10 @@ import com.raulvieira.nextstoptoronto.models.PredictionModel
 import com.raulvieira.nextstoptoronto.models.RoutePredictionsModel
 import com.raulvieira.nextstoptoronto.models.SinglePredictionModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StopPredictionCard(
     routePredictionItem: RoutePredictionsModel,
-    onClick: (String) -> Unit,
+    onClick: () -> Unit,
     onClickFavorite: (Boolean) -> Unit,
     favoriteButtonChecked: Boolean,
     distanceToStop: () -> String,
@@ -35,7 +34,8 @@ fun StopPredictionCard(
         modifier = Modifier
             .wrapContentHeight()
             .fillMaxWidth()
-            .padding(10.dp), onClick = { }
+            .padding(10.dp),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

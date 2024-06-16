@@ -3,6 +3,7 @@ package com.raulvieira.nextstoptoronto.repository
 import android.util.Log
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
+import com.raulvieira.nextstoptoronto.models.PathModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.flow.*
@@ -26,6 +27,21 @@ class Repository @Inject constructor(private val apiService: RetrofitInterface, 
                 Log.e("EXCEPTION", e.message.toString())
             }
         }
+
+    suspend fun getPaths(routeTag: String): List<PathModel> {
+        return try {
+            val response = apiService.requestRouteConfig(routeTag = routeTag)
+
+            if (response.isSuccessful) {
+                response.body()?.route?.paths ?: listOf()
+            } else {
+                listOf()
+            }
+        } catch (e: Exception) {
+            Log.e("EXCEPTION", e.message.toString())
+            listOf<PathModel>()
+        }
+    }
 
     suspend fun requestPredictionsForMultiStops(stops: List<String>): StopPredictionModel? {
         return if (stops.isNotEmpty()) {

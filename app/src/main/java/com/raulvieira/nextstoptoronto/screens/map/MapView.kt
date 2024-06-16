@@ -5,6 +5,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.location.Location
 import android.view.MotionEvent
 import androidx.compose.foundation.background
@@ -40,6 +41,7 @@ import com.raulvieira.nextstoptoronto.utils.locationFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.models.PathModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -52,6 +54,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.Projection
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
@@ -73,6 +76,7 @@ fun MapView(
     onRequestStopInfo: (stopId: String) -> Unit,
     stopState: StateFlow<StopPredictionModel?>,
     stopsList: List<StopModel>,
+    paths: List<PathModel>,
     onCloseStopInfo: () -> Unit
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
@@ -80,9 +84,7 @@ fun MapView(
     val coroutineScope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val fusedLocationClient = remember {
-        LocationServices.getFusedLocationProviderClient(
-            context
-        )
+        LocationServices.getFusedLocationProviderClient(context)
     }
     var userLocation: Location? by remember { mutableStateOf(null) }
     val permissionsState =
@@ -93,6 +95,7 @@ fun MapView(
             )
         )
     var recalculateStops by remember { mutableStateOf(false) }
+    var pathsAdded: Boolean = false
 
     if (permissionsState.allPermissionsGranted) {
         LaunchedEffect(key1 = fusedLocationClient.lastLocation) {
@@ -211,6 +214,33 @@ fun MapView(
                     }
                 })
 
+//                val routeLine = Polyline().apply {
+////                    setPoints(
+////                        listOf(
+////                            GeoPoint(43.72718, -79.48197),
+////                            GeoPoint(43.74443, -79.48648),
+////                            GeoPoint(43.68998, -79.47486)
+////                        )
+////                    )
+//                    setPoints(
+//                        listOf(
+//                            GeoPoint(43.72718, -79.48197),
+//                            GeoPoint(43.72727, -79.48217),
+//                            GeoPoint(43.72946, -79.48265),
+//                            GeoPoint(43.73108, -79.48294),
+//                            GeoPoint(43.73283, -79.48338),
+//                            GeoPoint(43.73686, -79.48436),
+//
+//                            GeoPoint(43.68998, -79.47486),
+//                            GeoPoint(43.69085, -79.47542),
+//                            GeoPoint(43.69152, -79.47451),
+//                            GeoPoint(43.6918, -79.47425),
+//                            GeoPoint(43.69215, -79.47421),
+//                        )
+//                    )
+//                }
+//                mapViewState.overlays.add(routeLine)
+
                 val overlays =
                     listOf(
                         rotationOverlay,
@@ -234,6 +264,18 @@ fun MapView(
 
                 view.performClick()
             }
+
+            if (!pathsAdded && paths.isNotEmpty()) {
+                val polylines = paths.map { path ->
+                    Polyline().apply {
+                        setPoints(path.points.map { point -> GeoPoint(point.latitude.toDouble(), point.longitude.toDouble()) })
+                        outlinePaint.color = Color.RED
+                    }
+                }
+                mapViewState.overlays.addAll(1, polylines)
+                pathsAdded = true
+            }
+
             onLoad?.invoke(mapView)
         }
 
@@ -250,9 +292,14 @@ fun MapView(
                 )
             }
         ) {
-            Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.background)) {
+            Box(modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.background)) {
                 Icon(
-                    modifier = Modifier.size(20.dp).align(Alignment.Center),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.Center),
                     imageVector = Icons.Filled.MyLocation,
                     contentDescription = "Center my location",
                     tint = MaterialTheme.colorScheme.onBackground
@@ -345,6 +392,7 @@ private fun filterStopMarkersOverlay(
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         stopMarkersOverlay.add(marker)
     }
-    mapView.overlays[2] = stopMarkersOverlay
+    val stopMarkersOverlayIndex = mapView.overlays.indexOfFirst { it.javaClass == RadiusMarkerClusterer::class.java }.takeIf { it >= 0 }
+    stopMarkersOverlayIndex?.let { mapView.overlays[it] = stopMarkersOverlay }
     mapView.invalidate()
 }

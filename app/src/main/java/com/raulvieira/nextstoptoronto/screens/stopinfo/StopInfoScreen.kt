@@ -29,7 +29,8 @@ import kotlinx.coroutines.delay
 fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
     routeTag: String,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    onClickRoute: (routeTag: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -102,7 +103,9 @@ fun StopInfoScreen(
                                         prediction.stopTitle
                                     ).collectAsStateWithLifecycle(initialValue = false)
                                     isFavorited
-                                })
+                                },
+                                onClickRoute = onClickRoute
+                            )
 
                         }
 
@@ -121,6 +124,7 @@ private fun StopInfoScreenSuccess(
     routeTag: String,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
+    onClickRoute: (routeTag: String) -> Unit
 ) {
     Column {
         StopsPredictionLazyColumn(
@@ -135,7 +139,8 @@ private fun StopInfoScreenSuccess(
             },
             distanceToStop = { "" },
             hideEmptyRoute = false,
-            isOnStopScreen = true
+            isOnStopScreen = true,
+            onClickRoute = onClickRoute
         )
     }
 }
@@ -221,6 +226,7 @@ fun StopInfoScreenLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = { "" }
+        distanceToStop = { "" },
+        onClickRoute = { }
     )
 }

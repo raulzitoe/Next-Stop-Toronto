@@ -11,8 +11,10 @@ data class RouteConfigurationModel(
 data class RouteModel(
     val title: String, // Ex: 29-Dufferin
     @SerializedName("stop")
-    val stopsList: List<StopModel>
+    val stopsList: List<StopModel>,
     // Theres also direction field, not used for now
+    @SerializedName("path")
+    val paths: List<PathModel>
 )
 
 @Entity(tableName = "stops_table")
@@ -26,3 +28,14 @@ data class StopModel(
     val title: String = "" // Ex: Dufferin St At Wilson Ave South Side
 )
 
+data class PathModel(
+    @SerializedName("point")
+    val points: List<PointModel>
+)
+
+data class PointModel(
+    @SerializedName("lat")
+    val latitude: String,
+    @SerializedName("lon")
+    val longitude: String
+)

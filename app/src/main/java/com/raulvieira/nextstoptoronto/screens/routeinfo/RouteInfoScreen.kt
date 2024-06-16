@@ -272,7 +272,8 @@ private fun RouteInfoScreenSuccessPreview() {
                     StopModel(title = "This road at that road", stopId = "1"),
                     StopModel(title = "This road at that road", stopId = "2"),
                     StopModel(title = "This road at that road", stopId = "3")
-                )
+                ),
+                paths = listOf()
             )
         ),
         onClickStop = {},

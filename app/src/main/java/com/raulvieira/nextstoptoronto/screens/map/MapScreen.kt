@@ -44,6 +44,7 @@ fun MapScreen(
     val isInternetOn by isInternetOn(LocalContext.current, scope).collectAsStateWithLifecycle()
     var internetStatusBarVisible by remember { mutableStateOf(false) }
     val stopsList by viewModel.stopList.collectAsStateWithLifecycle()
+    val paths by viewModel.paths.collectAsStateWithLifecycle()
 
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -77,11 +78,13 @@ fun MapScreen(
             ) {
                 InternetStatusBar(isConnected = isInternetOn)
             }
+
             MapView(
                 modifier = Modifier.fillMaxSize(),
                 onRequestStopInfo = { stopId -> viewModel.setStopIdValue(stopId) },
                 stopState = viewModel.stopState,
                 stopsList = stopsList,
+                paths = paths,
                 onCloseStopInfo = { viewModel.clearStopIdFlow() }
             )
         }
