@@ -16,3 +16,4 @@ local.properties
 /app/release/app-release.aab
 *.jks
 /.idea/misc.xml
+/.idea/other.xml
