@@ -3,7 +3,6 @@ package com.raulvieira.nextstoptoronto.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -49,12 +48,6 @@ fun MyAppNavHost(
             stringResource(id = R.string.favorites)
         )
     )
-
-    Scaffold { padding ->
-        Column {
-            AnimatedNavHost(navController = , graph = )
-        }
-    }
 
     Scaffold(
         bottomBar = {
@@ -117,22 +110,52 @@ fun MyAppNavHost(
                     )
                 }
             ) {
-                HomeScreen(onNavigate = { busRouteTag ->
-                    navController.navigate(
-                        "${Screen.RouteInfoScreen.route}?routeTag=${busRouteTag}"
-                    )
-                })
+                HomeScreen(
+                    onNavigate = { busRouteTag ->
+                        navController.navigate(
+                            "${Screen.RouteInfoScreen.route}?routeTag=${busRouteTag}"
+                        )
+                    }
+                )
             }
+
+            composable(
+                route = Screen.MapScreen.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(600)
+                    )
+                }
+            ) { MapScreen() }
 
             composable(
                 route = "${Screen.MapScreen.route}?routeTag={routeTag}",
                 arguments = listOf(navArgument("routeTag") { type = NavType.StringType }),
                 enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Start,
-                    animationSpec = tween(600)
-                )
-            },
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
                 popEnterTransition = {
                     slideIntoContainer(
                         AnimatedContentTransitionScope.SlideDirection.End,
@@ -150,14 +173,17 @@ fun MyAppNavHost(
                         AnimatedContentTransitionScope.SlideDirection.End,
                         animationSpec = tween(600)
                     )
-                }) { MapScreen() }
+                }
+            ) { MapScreen() }
 
-            composable(route = Screen.FavoritesScreen.route, enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Start,
-                    animationSpec = tween(600)
-                )
-            },
+            composable(
+                route = Screen.FavoritesScreen.route,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(600)
+                    )
+                },
                 popEnterTransition = {
                     slideIntoContainer(
                         AnimatedContentTransitionScope.SlideDirection.End,
@@ -175,7 +201,8 @@ fun MyAppNavHost(
                         AnimatedContentTransitionScope.SlideDirection.End,
                         animationSpec = tween(600)
                     )
-                }) {
+                }
+            ) {
                 FavoritesScreen(
                     onClickRoute = { routeTag ->
                         navController.navigate(
@@ -220,8 +247,10 @@ fun MyAppNavHost(
                         navController.navigate(
                             "${Screen.StopInfoScreen.route}?routeTag=${routeTag}&stopId=${stopId}"
                         )
-                    })
+                    }
+                )
             }
+
             composable(
                 route = "${Screen.StopInfoScreen.route}?routeTag={routeTag}&stopId={stopId}",
                 arguments = listOf(
@@ -262,6 +291,7 @@ fun MyAppNavHost(
                     }
                 )
             }
+
             composable(route = Screen.NearMeScreen.route, enterTransition = {
                 slideIntoContainer(
                     AnimatedContentTransitionScope.SlideDirection.Start,
@@ -285,7 +315,8 @@ fun MyAppNavHost(
                         AnimatedContentTransitionScope.SlideDirection.End,
                         animationSpec = tween(600)
                     )
-                }) {
+                }
+            ) {
                 NearMeScreen(
                     onClickRoute = { routeTag ->
                         navController.navigate(
