@@ -174,7 +174,12 @@ fun MyAppNavHost(
                         animationSpec = tween(600)
                     )
                 }
-            ) { MapScreen() }
+            ) { backStackEntry ->
+                MapScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    routeTag = backStackEntry.arguments?.getString("routeTag").orEmpty()
+                )
+            }
 
             composable(
                 route = Screen.FavoritesScreen.route,
