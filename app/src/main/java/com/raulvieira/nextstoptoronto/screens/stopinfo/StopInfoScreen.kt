@@ -5,7 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +30,7 @@ fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
     routeTag: String,
     onNavigateUp: () -> Unit,
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -59,7 +59,7 @@ fun StopInfoScreen(
                     IconButton(
                         onClick = { onNavigateUp() }
                     ) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Localized description")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Button")
                     }
                 }
             )
@@ -124,7 +124,7 @@ private fun StopInfoScreenSuccess(
     routeTag: String,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     Column {
         StopsPredictionLazyColumn(
@@ -227,6 +227,6 @@ fun StopInfoScreenLazyColumnPreview() {
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
         distanceToStop = { "" },
-        onClickRoute = { }
+        onClickRoute = {_ , _ -> }
     )
 }

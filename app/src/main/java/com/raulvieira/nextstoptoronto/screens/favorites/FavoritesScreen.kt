@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
-    onClickRoute: (String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -118,7 +118,7 @@ private fun FavoritesScreenSuccess(
     predictions: List<RoutePredictionsModel>,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     if (predictions.isEmpty()) {
         Box(
@@ -224,6 +224,6 @@ fun StopsLazyColumnPreview() {
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
         distanceToStop = { "0.2 Km" },
-        onClickRoute = { }
+        onClickRoute = {_ , _ -> }
     )
 }

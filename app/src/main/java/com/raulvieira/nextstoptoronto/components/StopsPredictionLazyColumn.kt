@@ -31,7 +31,7 @@ fun StopsPredictionLazyColumn(
     distanceToStop: (RoutePredictionsModel) -> String,
     hideEmptyRoute: Boolean = true,
     isOnStopScreen: Boolean = false,
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -62,7 +62,7 @@ fun StopsPredictionLazyColumn(
             if (!hideEmptyRoute || routePredictionItem.directions.isNotEmpty()) {
                 StopPredictionCard(
                     routePredictionItem = routePredictionItem,
-                    onClick = { onClickRoute(routePredictionItem.routeTag) },
+                    onClick = { onClickRoute(routePredictionItem.routeTag, routePredictionItem.stopTag) },
                     onClickFavorite = { isChecked ->
                         onClickFavoriteItem(isChecked, routePredictionItem)
                     },
@@ -156,6 +156,6 @@ fun StopsLazyColumnPreview() {
         favoriteButtonChecked = { true },
         distanceToStop = { "0.2 Km" },
         hideEmptyRoute = true,
-        onClickRoute = {}
+        onClickRoute = {_ , _ -> }
     )
 }

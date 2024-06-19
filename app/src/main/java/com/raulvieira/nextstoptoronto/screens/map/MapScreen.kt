@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
 import android.Manifest
+import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -41,6 +42,7 @@ fun MapScreen(
     viewModel: MapScreenViewModel = hiltViewModel(),
     onNavigateUp: () -> Unit = {},
     routeTag: String = "",
+    stopTagToCenter: String = ""
 ) {
     val permissionsState =
         rememberMultiplePermissionsState(
@@ -55,6 +57,17 @@ fun MapScreen(
     var internetStatusBarVisible by remember { mutableStateOf(false) }
     val stopsList by viewModel.stopList.collectAsStateWithLifecycle()
     val paths by viewModel.paths.collectAsStateWithLifecycle()
+    val locationToCenter by remember(stopsList) {
+        mutableStateOf(
+            stopsList.find { it.stopTag == stopTagToCenter }?.let {
+                Location("")
+                    .apply {
+                        latitude = it.latitude.toDoubleOrNull() ?: 0.0
+                        longitude = it.longitude.toDoubleOrNull() ?: 0.0
+                    }
+            }
+        )
+    }
 
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -106,6 +119,7 @@ fun MapScreen(
                 stopState = viewModel.stopState,
                 stopsList = stopsList,
                 paths = paths,
+                locationToCenter = locationToCenter,
                 onCloseStopInfo = { viewModel.clearStopIdFlow() }
             )
         }

@@ -1,6 +1,5 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
-
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -62,8 +61,8 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import kotlin.math.ceil
 
-
 const val START_ZOOM = 16.0
+const val ROUTE_SELECTED_ZOOM = 18.0
 const val STARTING_LATITUDE = 43.666553
 const val STARTING_LONGITUDE = -79.403691
 
@@ -77,6 +76,7 @@ fun MapView(
     stopState: StateFlow<StopPredictionModel?>,
     stopsList: List<StopModel>,
     paths: List<PathModel>,
+    locationToCenter: Location? = null,
     onCloseStopInfo: () -> Unit
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
@@ -95,11 +95,12 @@ fun MapView(
             )
         )
     var recalculateStops by remember { mutableStateOf(false) }
-    var pathsAdded: Boolean = false
+    var pathsAdded = false
+    var centeredToStop = false
 
     if (permissionsState.allPermissionsGranted) {
         LaunchedEffect(key1 = fusedLocationClient.lastLocation) {
-            if (permissionsState.allPermissionsGranted) {
+            if (permissionsState.allPermissionsGranted && locationToCenter == null) {
                 fusedLocationClient.locationFlow(this).collect { location ->
                     if (userLocation?.latitude != location?.latitude
                         && userLocation?.longitude != location?.longitude
@@ -114,7 +115,14 @@ fun MapView(
         }
     }
 
-    LaunchedEffect(key1 = recalculateStops) {
+    LaunchedEffect(locationToCenter, centeredToStop) {
+        if (!centeredToStop) {
+            centerMapToLocation(locationToCenter, mapViewState, zoom = ROUTE_SELECTED_ZOOM, onRecalculateStops = { recalculateStops = !recalculateStops})
+            centeredToStop = true
+        }
+    }
+
+    LaunchedEffect(recalculateStops) {
         filterStopMarkersOverlay(
             context,
             stopsList,
@@ -146,7 +154,7 @@ fun MapView(
                 with(mapViewState) {
                     // This fixes mapview overflowing parent layout
                     clipToOutline = true
-                    controller.setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
+                    controller.setCenter( locationToCenter?.let { GeoPoint(it) } ?: GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
                     controller.setZoom(START_ZOOM)
                     setMultiTouchControls(true)
                     zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
@@ -213,33 +221,6 @@ fun MapView(
                         return false
                     }
                 })
-
-//                val routeLine = Polyline().apply {
-////                    setPoints(
-////                        listOf(
-////                            GeoPoint(43.72718, -79.48197),
-////                            GeoPoint(43.74443, -79.48648),
-////                            GeoPoint(43.68998, -79.47486)
-////                        )
-////                    )
-//                    setPoints(
-//                        listOf(
-//                            GeoPoint(43.72718, -79.48197),
-//                            GeoPoint(43.72727, -79.48217),
-//                            GeoPoint(43.72946, -79.48265),
-//                            GeoPoint(43.73108, -79.48294),
-//                            GeoPoint(43.73283, -79.48338),
-//                            GeoPoint(43.73686, -79.48436),
-//
-//                            GeoPoint(43.68998, -79.47486),
-//                            GeoPoint(43.69085, -79.47542),
-//                            GeoPoint(43.69152, -79.47451),
-//                            GeoPoint(43.6918, -79.47425),
-//                            GeoPoint(43.69215, -79.47421),
-//                        )
-//                    )
-//                }
-//                mapViewState.overlays.add(routeLine)
 
                 val overlays =
                     listOf(
@@ -313,13 +294,15 @@ fun MapView(
 private fun centerMapToLocation(
     userLocation: Location?,
     mapViewState: MapView,
+    zoom: Double? = null,
     onRecalculateStops: () -> Unit
 ) {
     val geoPoint = userLocation?.let { GeoPoint(it) }
     geoPoint?.let {
         mapViewState.isAnimating
         mapViewState.controller.animateTo(
-            it, mapViewState.zoomLevelDouble,
+            it,
+            zoom ?: mapViewState.zoomLevelDouble,
             1000L, mapViewState.mapOrientation
         )
         mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {

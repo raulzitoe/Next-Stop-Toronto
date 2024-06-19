@@ -28,8 +28,13 @@ class MapScreenViewModel @Inject constructor(
     val paths = _paths.asStateFlow()
 
     init {
-        getStopsFromDatabase()
-        getPaths(savedStateHandle.get<String>("routeTag") ?: "")
+        val routeTag = savedStateHandle.get<String>("routeTag").orEmpty()
+
+        if (routeTag.isNotBlank()) {
+            getPathsAndStopsForRoute(routeTag)
+        } else {
+            getStopsFromDatabase()
+        }
     }
 
     fun clearStopIdFlow() {
@@ -70,9 +75,17 @@ class MapScreenViewModel @Inject constructor(
         )
     }
 
-    fun getPaths(routeTag: String) {
+    private fun getPathsAndStopsForRoute(routeTag: String) {
         viewModelScope.launch {
-            _paths.update { repository.getPaths(routeTag) }
+            repository.getRouteConfigForPath(routeTag)
+                .onSuccess { response ->
+                    _paths.update { response.route.paths }
+                    _stopList.update { response.route.stopsList }
+                }
+                .onFailure {
+                    // TODO: Handle error
+                }
+
         }
     }
 

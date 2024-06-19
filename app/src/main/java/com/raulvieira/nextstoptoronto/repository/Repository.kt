@@ -3,13 +3,13 @@ package com.raulvieira.nextstoptoronto.repository
 import android.util.Log
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
-import com.raulvieira.nextstoptoronto.models.PathModel
+import com.raulvieira.nextstoptoronto.models.RouteConfigurationModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import kotlinx.coroutines.flow.*
-import java.lang.Exception
 import java.util.*
 import javax.inject.Inject
+import kotlin.Exception
 
 class Repository @Inject constructor(private val apiService: RetrofitInterface, private val database: RoomDao) {
 
@@ -28,18 +28,19 @@ class Repository @Inject constructor(private val apiService: RetrofitInterface, 
             }
         }
 
-    suspend fun getPaths(routeTag: String): List<PathModel> {
+    suspend fun getRouteConfigForPath(routeTag: String): Result<RouteConfigurationModel> {
         return try {
             val response = apiService.requestRouteConfig(routeTag = routeTag)
+            val data = response.body()
 
-            if (response.isSuccessful) {
-                response.body()?.route?.paths ?: listOf()
+            if (response.isSuccessful && data != null) {
+                Result.success(data)
             } else {
-                listOf()
+                Result.failure(Exception(response.errorBody().toString()))
             }
         } catch (e: Exception) {
             Log.e("EXCEPTION", e.message.toString())
-            listOf<PathModel>()
+            Result.failure(e)
         }
     }
 

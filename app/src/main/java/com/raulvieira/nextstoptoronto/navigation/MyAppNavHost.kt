@@ -148,8 +148,11 @@ fun MyAppNavHost(
             ) { MapScreen() }
 
             composable(
-                route = "${Screen.MapScreen.route}?routeTag={routeTag}",
-                arguments = listOf(navArgument("routeTag") { type = NavType.StringType }),
+                route = "${Screen.MapScreen.route}?routeTag={routeTag}&stopTag={stopTag}",
+                arguments = listOf(
+                    navArgument("routeTag") { type = NavType.StringType },
+                    navArgument("stopTag") { type = NavType.StringType }
+                ),
                 enterTransition = {
                     slideIntoContainer(
                         AnimatedContentTransitionScope.SlideDirection.Start,
@@ -177,7 +180,8 @@ fun MyAppNavHost(
             ) { backStackEntry ->
                 MapScreen(
                     onNavigateUp = { navController.navigateUp() },
-                    routeTag = backStackEntry.arguments?.getString("routeTag").orEmpty()
+                    routeTag = backStackEntry.arguments?.getString("routeTag").orEmpty(),
+                    stopTagToCenter = backStackEntry.arguments?.getString("stopTag").orEmpty(),
                 )
             }
 
@@ -209,9 +213,9 @@ fun MyAppNavHost(
                 }
             ) {
                 FavoritesScreen(
-                    onClickRoute = { routeTag ->
+                    onClickRoute = { routeTag, stopTag ->
                         navController.navigate(
-                            "${Screen.MapScreen.route}?routeTag=${routeTag}"
+                            "${Screen.MapScreen.route}?routeTag=${routeTag}&stopTag=${stopTag}"
                         )
                     }
                 )
@@ -289,9 +293,9 @@ fun MyAppNavHost(
                 StopInfoScreen(
                     routeTag = it.arguments?.getString("routeTag") ?: " ",
                     onNavigateUp = { navController.navigateUp() },
-                    onClickRoute = { routeTag ->
+                    onClickRoute = { routeTag, stopTag ->
                         navController.navigate(
-                            "${Screen.MapScreen.route}?routeTag=${routeTag}"
+                            "${Screen.MapScreen.route}?routeTag=${routeTag}&stopTag=${stopTag}"
                         )
                     }
                 )
@@ -323,9 +327,9 @@ fun MyAppNavHost(
                 }
             ) {
                 NearMeScreen(
-                    onClickRoute = { routeTag ->
+                    onClickRoute = { routeTag, stopTag ->
                         navController.navigate(
-                            "${Screen.MapScreen.route}?routeTag=${routeTag}"
+                            "${Screen.MapScreen.route}?routeTag=${routeTag}&stopTag=${stopTag}"
                         )
                     }
                 )

@@ -46,7 +46,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun NearMeScreen(
     viewModel: NearMeViewModel = hiltViewModel(),
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -194,7 +194,7 @@ private fun NearMeScreenSuccess(
     onCalculateDistance: (String) -> String,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
-    onClickRoute: (routeTag: String) -> Unit
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     StopsPredictionLazyColumn(
         predictions = predictions.sortedBy { prediction ->
@@ -354,6 +354,6 @@ private fun StopsLazyColumnPreview() {
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
         distanceToStop = { "0.2 Km" },
-        onClickRoute = {}
+        onClickRoute = {_ , _ ->}
     )
 }
