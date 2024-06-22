@@ -1,13 +1,10 @@
 package com.raulvieira.nextstoptoronto.screens.map
 
-
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
+import android.graphics.Color
 import android.location.Location
 import android.view.MotionEvent
 import androidx.compose.foundation.background
@@ -29,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -42,6 +40,7 @@ import com.raulvieira.nextstoptoronto.utils.locationFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.models.PathModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -54,6 +53,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.Projection
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
@@ -61,8 +61,8 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import kotlin.math.ceil
 
-
 const val START_ZOOM = 16.0
+const val ROUTE_SELECTED_ZOOM = 18.0
 const val STARTING_LATITUDE = 43.666553
 const val STARTING_LONGITUDE = -79.403691
 
@@ -75,6 +75,8 @@ fun MapView(
     onRequestStopInfo: (stopId: String) -> Unit,
     stopState: StateFlow<StopPredictionModel?>,
     stopsList: List<StopModel>,
+    paths: List<PathModel>,
+    locationToCenter: Location? = null,
     onCloseStopInfo: () -> Unit
 ) {
     val mapViewState = rememberMapViewWithLifecycle()
@@ -82,11 +84,9 @@ fun MapView(
     val coroutineScope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val fusedLocationClient = remember {
-        LocationServices.getFusedLocationProviderClient(
-            context
-        )
+        LocationServices.getFusedLocationProviderClient(context)
     }
-    var userLocation: Location? = remember { null }
+    var userLocation: Location? by remember { mutableStateOf(null) }
     val permissionsState =
         rememberMultiplePermissionsState(
             permissions = listOf(
@@ -95,14 +95,19 @@ fun MapView(
             )
         )
     var recalculateStops by remember { mutableStateOf(false) }
+    var pathsAdded = false
+    var centeredToStop = false
 
     if (permissionsState.allPermissionsGranted) {
         LaunchedEffect(key1 = fusedLocationClient.lastLocation) {
-            if (permissionsState.allPermissionsGranted) {
+            if (permissionsState.allPermissionsGranted && locationToCenter == null) {
                 fusedLocationClient.locationFlow(this).collect { location ->
                     if (userLocation?.latitude != location?.latitude
                         && userLocation?.longitude != location?.longitude
                     ) {
+                        if (userLocation == null) {
+                            centerMapToLocation(location, mapViewState, onRecalculateStops = { recalculateStops = !recalculateStops})
+                        }
                         userLocation = location
                     }
                 }
@@ -110,7 +115,14 @@ fun MapView(
         }
     }
 
-    LaunchedEffect(key1 = recalculateStops) {
+    LaunchedEffect(locationToCenter, centeredToStop) {
+        if (!centeredToStop) {
+            centerMapToLocation(locationToCenter, mapViewState, zoom = ROUTE_SELECTED_ZOOM, onRecalculateStops = { recalculateStops = !recalculateStops})
+            centeredToStop = true
+        }
+    }
+
+    LaunchedEffect(recalculateStops) {
         filterStopMarkersOverlay(
             context,
             stopsList,
@@ -142,7 +154,7 @@ fun MapView(
                 with(mapViewState) {
                     // This fixes mapview overflowing parent layout
                     clipToOutline = true
-                    controller.setCenter(GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
+                    controller.setCenter( locationToCenter?.let { GeoPoint(it) } ?: GeoPoint(STARTING_LATITUDE, STARTING_LONGITUDE))
                     controller.setZoom(START_ZOOM)
                     setMultiTouchControls(true)
                     zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
@@ -180,7 +192,7 @@ fun MapView(
 
                 val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapViewState).apply {
                     context.getDrawable(R.drawable.ic_navigation)?.let {
-                        setDirectionIcon(drawableToBitmap(it))
+                        setDirectionIcon(it.toBitmap())
                     }
                 }
 
@@ -193,7 +205,7 @@ fun MapView(
                         currentAngle += deltaAngle
                         if (System.currentTimeMillis() - deltaTime > timeLastSet) {
                             timeLastSet = System.currentTimeMillis()
-                            mapViewState.mapOrientation = mapViewState.mapOrientation + currentAngle
+                            mapViewState.mapOrientation += currentAngle
                         }
                     }
                 }
@@ -233,31 +245,42 @@ fun MapView(
 
                 view.performClick()
             }
+
+            if (!pathsAdded && paths.isNotEmpty()) {
+                val polylines = paths.map { path ->
+                    Polyline().apply {
+                        setPoints(path.points.map { point -> GeoPoint(point.latitude.toDouble(), point.longitude.toDouble()) })
+                        outlinePaint.color = Color.RED
+                    }
+                }
+                mapViewState.overlays.addAll(1, polylines)
+                pathsAdded = true
+            }
+
             onLoad?.invoke(mapView)
         }
 
         IconButton(modifier = Modifier
             .padding(20.dp)
-            .align(Alignment.BottomEnd), onClick = {
-            val geoPoint = userLocation?.let { GeoPoint(it) }
-            geoPoint?.let {
-                mapViewState.isAnimating
-                mapViewState.controller.animateTo(
-                    it, mapViewState.zoomLevelDouble,
-                    1000L, mapViewState.mapOrientation
-                )
-                mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
-                    while (mapViewState.isAnimating) {
-                        delay(50)
+            .align(Alignment.BottomEnd),
+            onClick = {
+                centerMapToLocation(
+                    userLocation = userLocation,
+                    mapViewState = mapViewState,
+                    onRecalculateStops = {
+                        recalculateStops = !recalculateStops
                     }
-                    recalculateStops = !recalculateStops
-                }
-
+                )
             }
-        }) {
-            Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.background)) {
+        ) {
+            Box(modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.background)) {
                 Icon(
-                    modifier = Modifier.size(20.dp).align(Alignment.Center),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.Center),
                     imageVector = Icons.Filled.MyLocation,
                     contentDescription = "Center my location",
                     tint = MaterialTheme.colorScheme.onBackground
@@ -268,17 +291,37 @@ fun MapView(
     }
 }
 
+private fun centerMapToLocation(
+    userLocation: Location?,
+    mapViewState: MapView,
+    zoom: Double? = null,
+    onRecalculateStops: () -> Unit
+) {
+    val geoPoint = userLocation?.let { GeoPoint(it) }
+    geoPoint?.let {
+        mapViewState.isAnimating
+        mapViewState.controller.animateTo(
+            it,
+            zoom ?: mapViewState.zoomLevelDouble,
+            1000L, mapViewState.mapOrientation
+        )
+        mapViewState.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
+            while (mapViewState.isAnimating) {
+                delay(50)
+            }
+            onRecalculateStops()
+        }
+
+    }
+}
+
 private fun isStopWithinBoundBox(
     stopLatitude: Double,
     stopLongitude: Double,
     boundingBox: BoundingBox
 ): Boolean {
-    if (stopLatitude > boundingBox.latSouth && stopLatitude < boundingBox.latNorth
-        && stopLongitude < boundingBox.lonEast && stopLongitude > boundingBox.lonWest
-    ) {
-        return true
-    }
-    return false
+    return (stopLatitude > boundingBox.latSouth && stopLatitude < boundingBox.latNorth
+            && stopLongitude < boundingBox.lonEast && stopLongitude > boundingBox.lonWest)
 }
 
 private fun filterStopMarkersOverlay(
@@ -332,23 +375,7 @@ private fun filterStopMarkersOverlay(
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         stopMarkersOverlay.add(marker)
     }
-    mapView.overlays[2] = stopMarkersOverlay
+    val stopMarkersOverlayIndex = mapView.overlays.indexOfFirst { it.javaClass == RadiusMarkerClusterer::class.java }.takeIf { it >= 0 }
+    stopMarkersOverlayIndex?.let { mapView.overlays[it] = stopMarkersOverlay }
     mapView.invalidate()
-}
-
-private fun drawableToBitmap(drawable: Drawable): Bitmap {
-    if (drawable is BitmapDrawable) {
-        return drawable.bitmap
-    }
-
-    val bitmap = Bitmap.createBitmap(
-        drawable.intrinsicWidth,
-        drawable.intrinsicHeight,
-        Bitmap.Config.ARGB_8888
-    )
-    val canvas = Canvas(bitmap)
-    drawable.setBounds(0, 0, canvas.width, canvas.height)
-    drawable.draw(canvas)
-
-    return bitmap
 }

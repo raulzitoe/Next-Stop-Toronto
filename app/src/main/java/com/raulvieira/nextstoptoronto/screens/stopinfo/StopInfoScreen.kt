@@ -5,7 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +29,8 @@ import kotlinx.coroutines.delay
 fun StopInfoScreen(
     viewModel: StopInfoViewModel = hiltViewModel(),
     routeTag: String,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -58,7 +59,7 @@ fun StopInfoScreen(
                     IconButton(
                         onClick = { onNavigateUp() }
                     ) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Localized description")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Button")
                     }
                 }
             )
@@ -102,7 +103,9 @@ fun StopInfoScreen(
                                         prediction.stopTitle
                                     ).collectAsStateWithLifecycle(initialValue = false)
                                     isFavorited
-                                })
+                                },
+                                onClickRoute = onClickRoute
+                            )
 
                         }
 
@@ -121,6 +124,7 @@ private fun StopInfoScreenSuccess(
     routeTag: String,
     onClickFavoriteItem: (Boolean, RoutePredictionsModel) -> Unit,
     favoriteButtonChecked: @Composable (RoutePredictionsModel) -> Boolean,
+    onClickRoute: (routeTag: String, stopTag: String) -> Unit
 ) {
     Column {
         StopsPredictionLazyColumn(
@@ -135,7 +139,8 @@ private fun StopInfoScreenSuccess(
             },
             distanceToStop = { "" },
             hideEmptyRoute = false,
-            isOnStopScreen = true
+            isOnStopScreen = true,
+            onClickRoute = onClickRoute
         )
     }
 }
@@ -221,6 +226,7 @@ fun StopInfoScreenLazyColumnPreview() {
         ),
         onClickFavoriteItem = { _, _ -> },
         favoriteButtonChecked = { true },
-        distanceToStop = { "" }
+        distanceToStop = { "" },
+        onClickRoute = {_ , _ -> }
     )
 }
