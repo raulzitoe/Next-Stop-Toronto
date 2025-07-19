@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.raulvieira.nextstoptoronto.models.BusModel
 import com.raulvieira.nextstoptoronto.models.PathModel
 import com.raulvieira.nextstoptoronto.repository.Repository
 import com.raulvieira.nextstoptoronto.models.StopModel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class MapScreenViewModel @Inject constructor(
@@ -26,6 +28,8 @@ class MapScreenViewModel @Inject constructor(
     val stopList: StateFlow<List<StopModel>> = _stopList
     private val _paths = MutableStateFlow<List<PathModel>>(listOf())
     val paths = _paths.asStateFlow()
+    private val _busLocations = MutableStateFlow<List<BusModel>>(listOf())
+    val busLocations = _busLocations.asStateFlow()
 
     init {
         val routeTag = savedStateHandle.get<String>("routeTag").orEmpty()
@@ -81,11 +85,28 @@ class MapScreenViewModel @Inject constructor(
                 .onSuccess { response ->
                     _paths.update { response.route.paths }
                     _stopList.update { response.route.stopsList }
+                    getBusLocationsForRoute(routeTag)
                 }
                 .onFailure {
                     // TODO: Handle error
                 }
 
+        }
+    }
+
+    private fun getBusLocationsForRoute(routeTag: String) {
+        viewModelScope.launch {
+            while (true) {
+                repository.getBusLocationsForRoute(routeTag)
+                    .onSuccess { response ->
+                        _busLocations.update { response.buses }
+                    }
+                    .onFailure { throwable ->
+                        // TODO: Handle error
+                        println(throwable.message)
+                    }
+                delay(10.seconds)
+            }
         }
     }
 

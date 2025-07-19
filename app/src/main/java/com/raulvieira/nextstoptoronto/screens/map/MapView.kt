@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.location.Location
 import android.view.MotionEvent
 import androidx.compose.foundation.background
@@ -18,7 +19,14 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,13 +42,15 @@ import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
+import com.raulvieira.nextstoptoronto.R
+import com.raulvieira.nextstoptoronto.models.BusModel
+import com.raulvieira.nextstoptoronto.models.BusesLocationsModel
+import com.raulvieira.nextstoptoronto.models.PathModel
 import com.raulvieira.nextstoptoronto.models.StopModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
 import com.raulvieira.nextstoptoronto.utils.locationFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import com.raulvieira.nextstoptoronto.R
-import com.raulvieira.nextstoptoronto.models.PathModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -59,7 +69,12 @@ import org.osmdroid.views.overlay.gestures.RotationGestureOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
+import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
+import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
+import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import kotlin.math.ceil
+
 
 const val START_ZOOM = 16.0
 const val ROUTE_SELECTED_ZOOM = 18.0
@@ -76,6 +91,7 @@ fun MapView(
     stopState: StateFlow<StopPredictionModel?>,
     stopsList: List<StopModel>,
     paths: List<PathModel>,
+    busLocations: List<BusModel>,
     locationToCenter: Location? = null,
     onCloseStopInfo: () -> Unit
 ) {
@@ -146,6 +162,10 @@ fun MapView(
         onDispose {
             lifecycle.removeObserver(lifecycleObserver)
         }
+    }
+
+    LaunchedEffect(busLocations) {
+        updateBusesOverlay(context, busLocations, mapViewState)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -225,7 +245,8 @@ fun MapView(
                 val overlays =
                     listOf(
                         rotationOverlay,
-                        RadiusMarkerClusterer(context),
+                        RadiusMarkerClusterer(context).apply { name = "stops" },
+                        RadiusMarkerClusterer(context).apply { name = "buses" },
                         locationOverlay,
                         mapNorthCompassOverlay
                     )
@@ -256,6 +277,31 @@ fun MapView(
                 mapViewState.overlays.addAll(1, polylines)
                 pathsAdded = true
             }
+
+//            val busesOverlay = RadiusMarkerClusterer(context).apply {
+//                name = "Buses"
+//            }
+//
+//            val points = busLocations.map { LabelledGeoPoint(it.lat.toDoubleOrNull() ?: 0.0, it.lon.toDoubleOrNull() ?: 0.0, it.id) }
+//            // wrap them in a theme
+//            val pt = SimplePointTheme(points, true)
+//
+//
+//            // create label style
+//            val textStyle: Paint = Paint()
+//            textStyle.style = Paint.Style.FILL
+//            textStyle.color = Color.BLUE
+//            textStyle.textAlign = Paint.Align.CENTER
+//            textStyle.textSize = 24F
+//
+//
+//            // set some visual options for the overlay
+//            // we use here MAXIMUM_OPTIMIZATION algorithm, which works well with >100k points
+//            val opt = SimpleFastPointOverlayOptions.getDefaultStyle()
+//                .setAlgorithm(SimpleFastPointOverlayOptions.RenderingAlgorithm.MAXIMUM_OPTIMIZATION)
+//                .setRadius(7f).setIsClickable(true).setCellSize(15).setTextStyle(textStyle)
+//            val test: SimpleFastPointOverlay = SimpleFastPointOverlay(pt, opt)
+//            mapViewState.overlays.add(test)
 
             onLoad?.invoke(mapView)
         }
@@ -333,7 +379,7 @@ private fun filterStopMarkersOverlay(
     coroutineScope: CoroutineScope,
     boundingBox: BoundingBox
 ) {
-    val stopMarkersOverlay = RadiusMarkerClusterer(context)
+    val stopMarkersOverlay = RadiusMarkerClusterer(context).apply { name = "stops" }
     for (stop in stopsList) {
         if (!isStopWithinBoundBox(
                 stop.latitude.toDouble(),
@@ -375,7 +421,25 @@ private fun filterStopMarkersOverlay(
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         stopMarkersOverlay.add(marker)
     }
-    val stopMarkersOverlayIndex = mapView.overlays.indexOfFirst { it.javaClass == RadiusMarkerClusterer::class.java }.takeIf { it >= 0 }
+    val stopMarkersOverlayIndex = mapView.overlays.indexOfFirst { (it as? RadiusMarkerClusterer)?.name == "stops" }.takeIf { it >= 0 }
     stopMarkersOverlayIndex?.let { mapView.overlays[it] = stopMarkersOverlay }
+    mapView.invalidate()
+}
+
+fun updateBusesOverlay(
+    context: Context,
+    busLocations: List<BusModel>,
+    mapView: MapView
+) {
+    val busesOverlay = RadiusMarkerClusterer(context).apply { name = "buses" }
+    val points = busLocations.map { bus ->
+        Marker(mapView).apply {
+            position = GeoPoint(bus.lat.toDoubleOrNull() ?: 0.0, bus.lon.toDoubleOrNull() ?: 0.0)
+            icon = context.getDrawable(R.drawable.ic_bus)
+        }
+    }
+    points.forEach { busesOverlay.add(it) }
+    val busesOverlayIndex = mapView.overlays.indexOfFirst { (it as? RadiusMarkerClusterer)?.name == "buses" }.takeIf { it >= 0 }
+    busesOverlayIndex?.let { mapView.overlays[it] = busesOverlay }
     mapView.invalidate()
 }

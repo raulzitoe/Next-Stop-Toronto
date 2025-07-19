@@ -1,5 +1,6 @@
 package com.raulvieira.nextstoptoronto.repository
 
+import com.raulvieira.nextstoptoronto.models.BusesLocationsModel
 import com.raulvieira.nextstoptoronto.models.RouteConfigurationModel
 import com.raulvieira.nextstoptoronto.models.RouteListModel
 import com.raulvieira.nextstoptoronto.models.StopPredictionModel
@@ -38,5 +39,12 @@ interface RetrofitInterface {
         @Query("a") agency: String = "ttc",
         @Query("stops") stops: List<String>
     ): Response<StopPredictionModel>
+
+    @GET("publicJSONFeed?command=vehicleLocations")
+    suspend fun requestBusLocationsForRoute(
+        @Query("a") agency: String = "ttc",
+        @Query("r") routeTag: String,
+        @Query("t") epochTimeMillis: String
+    ): Response<BusesLocationsModel>
 
 }

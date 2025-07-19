@@ -1,6 +1,7 @@
 package com.raulvieira.nextstoptoronto.repository
 
 import android.util.Log
+import com.raulvieira.nextstoptoronto.models.BusesLocationsModel
 import com.raulvieira.nextstoptoronto.models.DateDatabaseModel
 import com.raulvieira.nextstoptoronto.models.FavoritesModel
 import com.raulvieira.nextstoptoronto.models.RouteConfigurationModel
@@ -61,6 +62,25 @@ class Repository @Inject constructor(private val apiService: RetrofitInterface, 
         }
         stopsList.distinctBy { it.stopTag }
         return stopsList
+    }
+
+    suspend fun getBusLocationsForRoute(routeTag: String): Result<BusesLocationsModel> {
+        return try {
+            val response = apiService.requestBusLocationsForRoute(
+                routeTag = routeTag,
+                epochTimeMillis = "0"
+            )
+            val data = response.body()
+
+            if (response.isSuccessful && data != null) {
+                Result.success(data)
+            } else {
+                Result.failure(Exception(response.errorBody().toString()))
+            }
+        } catch (e: Exception) {
+            Log.e("EXCEPTION", e.message.toString())
+            Result.failure(e)
+        }
     }
 
     // ROOM RELATED

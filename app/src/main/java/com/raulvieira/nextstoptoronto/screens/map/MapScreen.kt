@@ -57,6 +57,7 @@ fun MapScreen(
     var internetStatusBarVisible by remember { mutableStateOf(false) }
     val stopsList by viewModel.stopList.collectAsStateWithLifecycle()
     val paths by viewModel.paths.collectAsStateWithLifecycle()
+    val busLocations by viewModel.busLocations.collectAsStateWithLifecycle()
     val locationToCenter by remember(stopsList) {
         mutableStateOf(
             stopsList.find { it.stopTag == stopTagToCenter }?.let {
@@ -119,6 +120,7 @@ fun MapScreen(
                 stopState = viewModel.stopState,
                 stopsList = stopsList,
                 paths = paths,
+                busLocations = busLocations,
                 locationToCenter = locationToCenter,
                 onCloseStopInfo = { viewModel.clearStopIdFlow() }
             )

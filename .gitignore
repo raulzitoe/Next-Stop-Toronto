@@ -17,3 +17,5 @@ local.properties
 *.jks
 /.idea/misc.xml
 /.idea/other.xml
+/.idea/AndroidProjectSystem.xml
+/.idea/runConfigurations.xml
